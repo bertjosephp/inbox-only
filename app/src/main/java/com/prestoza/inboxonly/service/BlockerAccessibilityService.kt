@@ -22,6 +22,7 @@ import com.prestoza.inboxonly.domain.FocusController
 import com.prestoza.inboxonly.domain.FocusState
 import com.prestoza.inboxonly.domain.ReelFromChatTracker
 import com.prestoza.inboxonly.domain.Settings
+import com.prestoza.inboxonly.ui.BlockScreenActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -56,6 +57,10 @@ class BlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         val container = appContainer
+        // The block screen's "Go back" can only work once the screen has gone, so wait for its exit.
+        container.blockScreenBridge.goBack = { packageName, surfaceId ->
+            handler.postDelayed({ goBackAfterBlockScreen(packageName, surfaceId) }, BACK_AFTER_SCREEN_MS)
+        }
         val newScope = MainScope()
         scope = newScope
         // Parse rules.json off the main thread so the first screen check doesn't pay for it.
@@ -107,7 +112,8 @@ class BlockerAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
-        handler.removeCallbacks(pendingCheck)
+        appContainer.blockScreenBridge.goBack = null
+        handler.removeCallbacksAndMessages(null)
         scope?.cancel()
         scope = null
         super.onDestroy()
@@ -129,7 +135,7 @@ class BlockerAccessibilityService : AccessibilityService() {
             val tracker = reelTrackers.getOrPut(packageName) { ReelFromChatTracker() }
             val decision = BlockDecider.decide(signature, rules, settings, tracker)
             InspectorLogger.logDecision(signature, decision)
-            if (decision is Decision.Block) block(packageName, decision)
+            if (decision is Decision.Block) block(packageName, app.appId, decision)
         } finally {
             root.recycleCompat()
         }
@@ -143,6 +149,7 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private fun block(
         packageName: String,
+        appId: String,
         decision: Decision.Block,
     ) {
         val now = appContainer.timeSource.now()
@@ -156,11 +163,27 @@ class BlockerAccessibilityService : AccessibilityService() {
             }
 
             is BlockPlan.Execute -> {
-                val performed = plan.actions.firstOrNull(::perform) ?: return
-                throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+                // A fresh block shows the block screen; its buttons offer the way out. If the surface is
+                // back right after that (or after an action), act directly so the user can't get stuck.
+                val intent = BlockScreenActivity.intent(this, packageName, appId, decision)
+                if (!plan.escalated && startSafely(intent)) {
+                    throttle.recordScreenShown(packageName, decision.surfaceId, now)
+                } else {
+                    val performed = plan.actions.firstOrNull(::perform) ?: return
+                    throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+                }
                 // One count per block event, not per accessibility event.
                 appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
             }
+        }
+    }
+
+    private fun goBackAfterBlockScreen(
+        packageName: String,
+        surfaceId: String,
+    ) {
+        if (performGlobalAction(GLOBAL_ACTION_BACK)) {
+            throttle.recordExecuted(packageName, surfaceId, BlockAction.Back, appContainer.timeSource.now())
         }
     }
 
@@ -219,6 +242,9 @@ class BlockerAccessibilityService : AccessibilityService() {
     private companion object {
         const val CONTENT_THROTTLE_MS = 250L
         const val COOLDOWN_RECHECK_SLACK_MS = 50L
+
+        // Longer than the block screen's fade-out, so Back reaches the app underneath, not the screen.
+        const val BACK_AFTER_SCREEN_MS = 450L
         const val LISTENED_EVENT_TYPES =
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     }

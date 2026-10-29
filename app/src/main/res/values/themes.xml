@@ -8,4 +8,17 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <!-- The block screen fades in and out instead of the usual slide, so it feels like a pause, not a jump. -->
+    <style name="Theme.InboxOnly.BlockScreen">
+        <item name="android:windowAnimationStyle">@style/BlockScreenAnimation</item>
+    </style>
+
+    <!-- It opens in its own task, so both the activity and task transitions need the fade. -->
+    <style name="BlockScreenAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/block_screen_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/block_screen_exit</item>
+        <item name="android:taskOpenEnterAnimation">@anim/block_screen_enter</item>
+        <item name="android:taskCloseExitAnimation">@anim/block_screen_exit</item>
+    </style>
 </resources>

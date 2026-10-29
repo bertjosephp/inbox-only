@@ -129,3 +129,17 @@ content descriptions (`"Home, tab 1 of 5"`, `"Reels, tab 2 of 5"`) and the Reel 
 **Why:** The owner's Facebook has no Video/Watch screen; its tabs are Home, Reels, Groups, Notifications and
 Profile. Descriptions are English-UI strings, so a language change or a badge in the label can stop a
 match. That fails open, and UPDATING_RULES.md covers the fix.
+
+## ADR-019: A block screen instead of an instant exit
+**Decision:** A blocked surface opens Inbox Only's own `BlockScreenActivity` over the app. It's an opaque,
+fading Material 3 page with the rule's way out as its main button (`label` on `redirect`/`launch`
+actions, else "Go back" or "Close ‹app›") plus "Close ‹app›". The page runs in its own task, hidden
+from Recents; its Back gesture goes Home. "Go back" is handed to the accessibility service, which
+presses Back once the page has faded out. If the same surface comes back within 2 s of the page, the
+throttle escalates and the actions run directly, as before.
+**Why:** On device, being yanked out of an app felt abrupt; a page says *why* and lets the user choose
+where to go. It's still only our own activity opened by an intent, so nothing in the target apps is
+touched (no ban risk). Opaque, not a translucent dialog, so the feed isn't visible or audible behind
+it. Its own task stops "close" from revealing Inbox Only's settings, and Back going Home stops the
+page from dropping the user back into the feed it covers. The escalation keeps a safety net if the page
+ever fails to appear.

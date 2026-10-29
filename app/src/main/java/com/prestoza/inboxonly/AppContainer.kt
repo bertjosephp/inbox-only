@@ -13,6 +13,7 @@ import com.prestoza.inboxonly.data.SystemTimeSource
 import com.prestoza.inboxonly.data.TimeSource
 import com.prestoza.inboxonly.data.rules.RulesRepository
 import com.prestoza.inboxonly.service.AndroidAlarmScheduler
+import com.prestoza.inboxonly.service.BlockScreenBridge
 import com.prestoza.inboxonly.service.FocusCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +41,7 @@ class AppContainer(
     val counterStore = CounterStore(appContext.counterDataStore)
     val rulesRepository = RulesRepository(appContext)
     val onboardingStore = OnboardingStore(appContext.onboardingDataStore)
+    val blockScreenBridge = BlockScreenBridge()
 
     val focusCoordinator =
         FocusCoordinator(

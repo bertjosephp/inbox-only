@@ -24,12 +24,13 @@ something that blocks only the scroll.
 
 **Messenger is never touched.** Inbox Only doesn't even look at it.
 
-When you land on a blocked screen, the app steps you back out of it. Instagram jumps to your DM inbox,
-Facebook sends you to Messenger, and YouTube and Reddit just close. You can switch any app or screen
-off in the settings.
+When you land on a blocked screen, a calm "blocked" page fades in on top of it, with one button
+out: **Open DMs** for Instagram, **Open Messenger** for Facebook, **Go back** for Shorts, and **Close**
+for YouTube's Home and Reddit. Swiping back on that page closes the app, so you never land back in
+the feed. You can switch any app or screen off in the settings.
 
 **Reels from friends:** if someone sends you a Reel in a DM, you can watch that one. Swipe to the next
-Reel and you're sent back to the chat. (You can change this to "Block" if you prefer.)
+Reel and the blocked page offers to take you back to the chat. (You can change this to "Block" if you prefer.)
 
 ## Not on the Play Store
 
@@ -111,8 +112,8 @@ never changes any system settings.
 ## FAQ
 
 **Can I get banned from Instagram/Facebook/YouTube/Reddit?**
-No. Inbox Only never touches those apps or their servers. It only presses Back (or Home) for you,
-exactly like your own thumb would.
+No. Inbox Only never touches those apps or their servers. It shows its own page on top of them and,
+when you tap a button, presses Back (or Home) or opens your DMs, exactly like your own thumb would.
 
 **Why does it need accessibility access?**
 It's the only way Android lets an app see which screen another app is showing. Inbox Only uses that to

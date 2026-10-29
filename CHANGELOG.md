@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Block screen: blocked surfaces now fade into a calm page that names the app and screen, with one
+  button out (Open DMs, Open Messenger, Go back or Close ‹app›) instead of leaving instantly.
 - Domain core (M1): `Settings`, `BlockCatalog`, `FocusState`, `ScheduleCalculator` (midnight-crossing
   windows, DST and time zone safe) and `FocusController` (tile taps, timers, schedule edges, breaks,
   strict mode, reboot recovery), with unit tests.

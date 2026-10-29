@@ -145,12 +145,16 @@ data class Match(
 /** What to do when a blocked screen appears. Serialized with a `"type"` field. */
 @Serializable
 sealed interface BlockAction {
-    /** Open a deep link, e.g. Instagram's DM inbox. Must be verified on a real device before use. */
+    /**
+     * Open a deep link, e.g. Instagram's DM inbox. Must be verified on a real device before use.
+     * [label] is the block screen's button text, e.g. "Open DMs".
+     */
     @Serializable
     @SerialName("redirect")
     data class Redirect(
         val uri: String,
         @SerialName("package") val packageName: String? = null,
+        val label: String? = null,
     ) : BlockAction
 
     /** Launch another app's main screen, e.g. Messenger instead of the Facebook feed. */
@@ -158,6 +162,7 @@ sealed interface BlockAction {
     @SerialName("launch")
     data class Launch(
         @SerialName("package") val packageName: String,
+        val label: String? = null,
     ) : BlockAction
 
     /** Press Back. */

@@ -7,7 +7,7 @@ choices, see [DECISIONS.md](DECISIONS.md).
 ## 1. How it works
 
 ```
-accessibility event → ScreenSignature → BlockDecider → BlockThrottle → action (redirect / launch / back / home)
+accessibility event → ScreenSignature → BlockDecider → BlockThrottle → block screen → action (redirect / launch / back / home)
 ```
 
 1. **Event.** `BlockerAccessibilityService` gets `TYPE_WINDOW_STATE_CHANGED` (a new screen) and
@@ -29,9 +29,16 @@ accessibility event → ScreenSignature → BlockDecider → BlockThrottle → a
 4. **Throttle.** `BlockThrottle` enforces a 700 ms per-app cooldown. Within the cooldown it asks for a
    recheck when the cooldown ends. If the *same* surface reappears within 2 s of an action, it escalates
    to the next action (`redirect → back → home`). Home is always appended as the last resort.
-5. **Action.** The service performs the first action that works: a deep link (`redirect`), another
-   app's launcher intent (`launch`), or `GLOBAL_ACTION_BACK` / `GLOBAL_ACTION_HOME`. One block event
-   increments the daily counter once.
+5. **Block screen.** A fresh block opens `BlockScreenActivity`: our own page, in its own task and hidden
+   from Recents, that fades in over the app. `BlockScreenFormatter` turns the rule's first action into
+   its main button (the action's `label`, "Go back", or "Close ‹app›"), plus "Close ‹app›". Redirect,
+   launch and close are plain intents from the activity. Back must reach the app *underneath*, so the
+   activity hands it to the service through `BlockScreenBridge`, which presses Back 450 ms later, after
+   the page has faded out. The system Back gesture on the page closes the app (ADR-019).
+6. **Action.** If the same surface is back within 2 s of the screen (or of an action), the throttle
+   escalates and the service performs the actions directly, without the page: a deep link
+   (`redirect`), another app's launcher intent (`launch`), or `GLOBAL_ACTION_BACK` /
+   `GLOBAL_ACTION_HOME`. One block event increments the daily counter once.
 
 Focus itself is a separate loop: the **tile**, **alarms** and **settings** all go through
 `FocusCoordinator`. It loads the stored `FocusState`, asks the pure `FocusController` for the
@@ -131,7 +138,7 @@ fields are ignored, so newer files still load in older builds.
         "id": "home_feed",      // must be a BlockCatalog surface id
         "match": { "selectedViewIds": ["…"] },
         "actions": [
-          { "type": "redirect", "uri": "…", "package": "com.instagram.android" },
+          { "type": "redirect", "uri": "…", "package": "com.instagram.android", "label": "Open DMs" },
           { "type": "launch", "package": "com.facebook.orca" },
           { "type": "back" },
           { "type": "home" }

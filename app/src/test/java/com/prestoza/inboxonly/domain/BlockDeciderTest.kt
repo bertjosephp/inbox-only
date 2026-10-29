@@ -28,7 +28,7 @@ class BlockDeciderTest {
 
     private fun assertAllowed(screen: ScreenSignature) = assertEquals(Decision.Allow, decide(screen))
 
-    private val toInbox = BlockAction.Redirect("instagram://direct-inbox", IG)
+    private val toInbox = BlockAction.Redirect("instagram://direct-inbox", IG, "Open DMs")
 
     // ---- Instagram ----
 
@@ -113,7 +113,10 @@ class BlockDeciderTest {
     fun `facebook blocks the feed by opening messenger`() {
         val decision = decide(FixtureScreens.fbFeed) as Decision.Block
         assertEquals("news_feed", decision.surfaceId)
-        assertEquals(listOf(BlockAction.Launch("com.facebook.orca"), BlockAction.Back), decision.actions)
+        assertEquals(
+            listOf(BlockAction.Launch("com.facebook.orca", "Open Messenger"), BlockAction.Back),
+            decision.actions,
+        )
     }
 
     @Test
@@ -131,7 +134,7 @@ class BlockDeciderTest {
     private fun openFromMessenger(tracker: ReelFromChatTracker) =
         BlockDecider.onWindowOpened(FixtureScreens.FB, FixtureScreens.FB_IMMERSIVE, rules, tracker)
 
-    private val toMessenger = listOf(BlockAction.Launch("com.facebook.orca"), BlockAction.Back)
+    private val toMessenger = listOf(BlockAction.Launch("com.facebook.orca", "Open Messenger"), BlockAction.Back)
 
     @Test
     fun `facebook reel opened from messenger plays, swiping on opens messenger`() {
