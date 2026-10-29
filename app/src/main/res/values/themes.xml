@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Window theme only (what shows before Compose draws). The real UI theme is Material 3 in
+        Compose. DeviceDefault.DayNight follows the system light/dark setting.
+    -->
+    <style name="Theme.InboxOnly" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>
