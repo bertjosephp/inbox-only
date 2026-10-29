@@ -103,7 +103,9 @@ class FocusTileService : TileService() {
     }
 
     private fun render(status: TileStatus) {
-        // qsTile is null if the tile was removed from the shade in the meantime.
+        // A tap's work can finish after the shade closed; the tile may only be updated while listening.
+        // The next onStartListening renders fresh status anyway. qsTile is null if the tile was removed.
+        if (listeningScope == null) return
         val tile = qsTile ?: return
         tile.state = if (status.active) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.subtitle = status.subtitle
