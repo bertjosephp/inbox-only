@@ -71,31 +71,53 @@ screen is open on your own phone.
 
 ## Install
 
-1. **Download the APK.** Get the latest `inbox-only-…apk` from the
-   [Releases page](../../releases) on your phone.
-2. **Allow the install.** Open the file. Android asks you to allow installing apps from your browser
-   or Files app: tap **Settings**, switch on **Allow from this source**, then go back and tap **Install**.
-   - *Samsung:* if the install is blocked by **Auto Blocker**, go to Settings → Security and privacy →
-     Auto Blocker, turn it off, install the app, then turn it back on.
-   - If Google Play Protect warns about an unknown app, tap **More details → Install anyway**.
+Do these on your phone, in order. Screens below are from a Samsung Galaxy (One UI); other Android
+phones word things slightly differently.
 
-   > 📷 Screenshot to add: `docs/images/01-install-unknown-apps.png`
-3. **Open Inbox Only and follow the 3-step setup:**
-   1. **Turn on the blocker** (accessibility). Tap *Open accessibility settings*, find Inbox Only and
-      switch it on.
-      If the switch is greyed out or you see "Restricted setting": this is Android protecting you from
-      apps installed outside the Play Store. Tap *Open App info*, then the **⋮** menu (top right) →
-      **Allow restricted settings**, confirm, and try again.
+**1. Download the APK.** Open the [Releases page](../../releases) and tap `inbox-only-v….apk` under
+the latest release to download it.
 
-      > 📷 Screenshots to add: `docs/images/02-accessibility.png`, `docs/images/03-restricted-settings.png`
-   2. **Keep it running** (battery). Tap *Allow*. On Samsung, also go to Settings → Battery →
-      Background usage limits → **Never sleeping apps** → **+** → Inbox Only → **Add**.
+**2. Install it.**
+1. Open the downloaded file (from the download notification, or the **My Files** app → *Downloads*).
+2. If Android says your browser or Files app isn't allowed to install apps: tap **Settings**, switch on
+   **Allow from this source**, then press Back.
+3. Google Play Protect asks whether to scan the app. Tap **Scan app** (it finds nothing: Inbox Only has
+   no internet access), then **Install**.
+   - If Play Protect warns about an unknown app instead, tap **More details → Install anyway**.
+   - *Samsung:* if **Auto Blocker** blocks the install, go to Settings → Security and privacy →
+     Auto Blocker, turn it off, install, then turn it back on.
 
-      > 📷 Screenshot to add: `docs/images/04-never-sleeping-apps.png`
-   3. **Add the Focus tile.** Tap *Add tile* and confirm. Or add it yourself: swipe down twice from the
-      top, tap the pencil icon, and drag **Focus** into your tiles.
+> 📷 Screenshot to add: `docs/images/01-install-unknown-apps.png`
 
-      > 📷 Screenshot to add: `docs/images/05-add-tile.png`
+**3. Open Inbox Only.** It walks you through three steps.
+
+**Step 1: turn on the blocker (accessibility).**
+1. Tap **Open accessibility settings**, then **Installed apps** → **Inbox Only blocker**.
+2. The switch is greyed out, and tapping it says **"App was denied access"**. That's expected: Android
+   blocks this permission for apps installed outside the Play Store until you allow it once. Tap **OK**.
+3. Allow it:
+   1. Go to **Settings → Apps → Inbox Only** (or go back to Inbox Only and tap **Open App info**).
+   2. Tap **⋮** (top right) → **Allow restricted settings**, and confirm with your PIN or fingerprint.
+      (This menu item only appears after you've tried the switch once, as in step 2.)
+4. Go back to **Settings → Accessibility → Installed apps → Inbox Only blocker**, switch it **on**, and
+   tap **Allow** on the confirmation.
+5. Return to Inbox Only. Step 1 finishes by itself.
+
+> 📷 Screenshots to add: `docs/images/02-accessibility.png`, `docs/images/03-restricted-settings.png`
+
+**Step 2: keep it running (battery).** Tap **Allow**. On Samsung, also go to Settings → Battery →
+Background usage limits → **Never sleeping apps** → **+** → Inbox Only → **Add**.
+
+> 📷 Screenshot to add: `docs/images/04-never-sleeping-apps.png`
+
+**Step 3: add the Focus tile.** Tap **Add tile** and confirm. Or add it yourself: swipe down twice from
+the top, tap the pencil icon, and drag **Focus** into your tiles.
+
+> 📷 Screenshot to add: `docs/images/05-add-tile.png`
+
+**Updating later:** download the new APK and install it over the old one; your settings stay. If the
+blocker stops working afterwards, switch **Inbox Only blocker** off and on again in Accessibility
+settings (Android sometimes leaves it disconnected after an update).
 
 ## Daily use
 

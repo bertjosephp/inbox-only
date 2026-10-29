@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Install steps (README) and the onboarding's accessibility step now follow what One UI actually shows:
+  the Play Protect scan prompt and the "App was denied access" message for restricted settings.
+
 ## [1.0.0] - 2026-10-29
 
 ### Added

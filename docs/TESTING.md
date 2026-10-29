@@ -9,7 +9,7 @@ signed differently, so Android won't install one over the other. The four apps a
 friend (or second account) who can send you a DM and a Reel.
 
 ## 1. Install and setup (README steps, word for word)
-- [ ] Downloaded the APK from Releases on the phone and installed it via "Allow from this source".
+- [ ] Downloaded the APK from Releases on the phone and installed it (Play Protect: **Scan app** → Install).
 - [ ] Samsung Auto Blocker / Play Protect steps in the README were accurate (or not needed).
 - [ ] Onboarding step 1: accessibility. The restricted-settings instructions worked if needed. The step
       advanced by itself once the service was on.

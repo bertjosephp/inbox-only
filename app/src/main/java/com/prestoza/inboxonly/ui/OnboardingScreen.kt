@@ -82,12 +82,13 @@ private fun AccessibilityStep(actions: OnboardingActions) {
     )
     Button(onClick = actions.openAccessibilitySettings) { Text("Open accessibility settings") }
 
-    Text("Switch greyed out or \"Restricted setting\"?", style = MaterialTheme.typography.titleMedium)
+    Text("Switch greyed out, or \"App was denied access\"?", style = MaterialTheme.typography.titleMedium)
     Text(
-        "Android 13 and newer block this for apps installed outside the Play Store until you allow it once:\n" +
+        "That's expected: Android blocks this for apps installed outside the Play Store until you allow it " +
+            "once. Try the switch once first, then:\n" +
             "1. Tap \"Open App info\" below.\n" +
-            "2. Tap ⋮ (top right) → \"Allow restricted settings\", and confirm.\n" +
-            "3. Come back here and try again.",
+            "2. Tap ⋮ (top right) → \"Allow restricted settings\", and confirm with your PIN or fingerprint.\n" +
+            "3. Tap \"Open accessibility settings\" again → Installed apps → Inbox Only blocker, and switch it on.",
     )
     OutlinedButton(onClick = actions.openAppInfo) { Text("Open App info") }
     Text("This step finishes by itself once the service is on.", style = MaterialTheme.typography.bodySmall)
