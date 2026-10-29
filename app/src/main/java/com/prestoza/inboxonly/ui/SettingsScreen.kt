@@ -300,12 +300,7 @@ private fun PermissionFooter(
     onFix: (PermissionFix) -> Unit,
 ) {
     SectionTitle("Permissions")
-    if (permissions.accessibilityEnabled && !permissions.accessibilityRunning) {
-        // Seen after app updates: switched on in Settings, but Android isn't running it.
-        PermissionRow("Blocker stopped: switch it off and on", granted = false) { onFix(PermissionFix.ACCESSIBILITY) }
-    } else {
-        PermissionRow("Accessibility service", permissions.accessibilityEnabled) { onFix(PermissionFix.ACCESSIBILITY) }
-    }
+    PermissionRow("Accessibility service", permissions.accessibilityEnabled) { onFix(PermissionFix.ACCESSIBILITY) }
     PermissionRow("Battery optimization off", permissions.batteryOptimizationIgnored) { onFix(PermissionFix.BATTERY) }
     PermissionRow("Exact alarms", permissions.exactAlarmsAllowed) { onFix(PermissionFix.EXACT_ALARMS) }
     if (rulesArePlaceholder) {

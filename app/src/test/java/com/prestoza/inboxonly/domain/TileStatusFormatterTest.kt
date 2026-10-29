@@ -15,9 +15,9 @@ class TileStatusFormatterTest {
     private fun status(
         state: FocusState,
         blocked: Int = 0,
-        blocker: BlockerHealth = BlockerHealth.RUNNING,
+        setupNeeded: Boolean = false,
         use24Hour: Boolean = false,
-    ) = TileStatusFormatter.status(state, now, zone, blocked, blocker, use24Hour)
+    ) = TileStatusFormatter.status(state, now, zone, blocked, setupNeeded, use24Hour)
 
     @Test
     fun `manual with timer shows hours and minutes left`() {
@@ -62,15 +62,7 @@ class TileStatusFormatterTest {
 
     @Test
     fun `missing setup overrides everything`() {
-        assertEquals(TileStatus(false, "Set up"), status(FocusState.Manual(null), blocker = BlockerHealth.NOT_ENABLED))
-    }
-
-    @Test
-    fun `a blocker that an update left stopped asks for a restart`() {
-        assertEquals(
-            TileStatus(false, "Restart blocker"),
-            status(FocusState.Manual(null), blocker = BlockerHealth.STOPPED),
-        )
+        assertEquals(TileStatus(false, "Set up"), status(FocusState.Manual(null), setupNeeded = true))
     }
 
     @Test

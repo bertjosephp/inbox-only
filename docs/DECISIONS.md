@@ -168,13 +168,3 @@ replaced by related cards as you scroll, so that can't be the identity. Known li
 YouTube is closed doesn't fire the reset window; it still works because a linked video shows no title,
 but if YouTube ever starts showing one, that first video could be blocked. Closing the block screen and
 reopening YouTube on the blocked video starts a new visit; that takes deliberate effort, so it's accepted.
-
-## ADR-022: Detect a blocker that's enabled but not running
-**Decision:** `AccessibilityStatus.health()` returns `NOT_ENABLED`, `STOPPED` or `RUNNING`. `STOPPED`
-means switched on in Settings but missing from `AccessibilityManager.getEnabledAccessibilityServiceList`,
-which the system answers from the services it has actually bound. The tile then shows `Restart blocker`
-(a tap opens the app) and the settings footer shows "Blocker stopped: switch it off and on" with **Fix**.
-**Why:** On the owner's Galaxy S25+, every reinstall left the service enabled but unbound
-(`dumpsys accessibility`: listed under *Enabled*, not *Bound*), so nothing was blocked and nothing said
-so. An app can't rebind its own accessibility service, so the honest fix is to say so and point to the
-switch. Right after boot the service can take a moment to bind, so the warning may flash briefly.

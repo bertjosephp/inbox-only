@@ -132,9 +132,7 @@ review isn't worth it for an app I made for myself.
 Most likely Instagram (or another app) updated its design and the app's detection rules need updating.
 Messaging keeps working in the meantime: when the app isn't sure, it lets you through. If you're a
 developer, [docs/UPDATING_RULES.md](docs/UPDATING_RULES.md) explains the fix. Otherwise, open an issue.
-Also check that the accessibility service is still on: the tile shows **Set up** if it isn't. If it
-shows **Restart blocker** (this can happen right after updating Inbox Only), go to Settings →
-Accessibility → Inbox Only blocker and switch it off and on again.
+Also check that the accessibility service is still on: the tile shows **Set up** if it isn't.
 
 **Does it drain my battery?**
 No. Android only wakes it for the four apps it watches, and only while Focus is on. When Focus is off

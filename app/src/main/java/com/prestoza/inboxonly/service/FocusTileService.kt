@@ -12,7 +12,6 @@ import android.service.quicksettings.TileService
 import android.text.format.DateFormat
 import android.widget.Toast
 import com.prestoza.inboxonly.appContainer
-import com.prestoza.inboxonly.domain.BlockerHealth
 import com.prestoza.inboxonly.domain.TapFeedback
 import com.prestoza.inboxonly.domain.TileStatus
 import com.prestoza.inboxonly.domain.TileStatusFormatter
@@ -57,12 +56,12 @@ class FocusTileService : TileService() {
     /**
      * Tap toggles Focus (or starts/ends a break inside a schedule window).
      *
-     * If the accessibility service is off or stopped, Focus couldn't block anything, so the tap opens the
-     * app (setup, or the settings footer's "Restart" fix) instead. (We can't use STATE_UNAVAILABLE for this: Android ignores taps on unavailable tiles.)
+     * If the accessibility service is off, Focus couldn't block anything, so the tap opens the app's
+     * setup instead. (We can't use STATE_UNAVAILABLE for this: Android ignores taps on unavailable tiles.)
      */
     override fun onClick() {
         super.onClick()
-        if (AccessibilityStatus.health(this) != BlockerHealth.RUNNING) {
+        if (!AccessibilityStatus.isServiceEnabled(this)) {
             openApp()
             return
         }
@@ -85,7 +84,7 @@ class FocusTileService : TileService() {
             now = container.timeSource.now(),
             zone = container.timeSource.zone(),
             blockedToday = coordinator.blockedToday(),
-            blocker = AccessibilityStatus.health(this),
+            setupNeeded = !AccessibilityStatus.isServiceEnabled(this),
             use24Hour = DateFormat.is24HourFormat(this),
         )
     }
