@@ -39,7 +39,8 @@ For each screen: open it from the app's normal navigation and check the result.
 
 **Facebook**
 - [ ] News feed (opening the app) → Messenger opens.
-- [ ] Reels → blocked. Video / Watch → blocked.
+- [ ] Reels tab → blocked. A Reel opened from the feed → blocked.
+- [ ] The ☰ menu → allowed.
 - [ ] Notifications → allowed.
 
 **YouTube**

@@ -1,31 +1,119 @@
 {
-  "version": 1,
-  "placeholder": true,
-  "comment": "PLACEHOLDER RULES. No real selectors yet: every app has empty allowed/surfaces lists, so nothing is ever blocked. Real view IDs are added only from on-device captures (scripts/inspect.sh); see docs/UPDATING_RULES.md.",
+  "version": 2,
+  "placeholder": false,
+  "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
     {
       "appId": "instagram",
       "package": "com.instagram.android",
-      "allowed": [],
-      "surfaces": []
+      "allowed": [
+        { "id": "dm_inbox", "match": { "selectedViewIds": ["com.instagram.android:id/direct_tab"] } },
+        { "id": "dm_thread", "match": { "anyViewIds": ["com.instagram.android:id/thread_fragment_container"] } },
+        { "id": "notifications", "match": { "anyViewIds": ["com.instagram.android:id/activity_feed_root"] } }
+      ],
+      "reelViewer": {
+        "match": {
+          "allViewIds": ["com.instagram.android:id/clips_viewer_view_pager"],
+          "noneViewIds": ["com.instagram.android:id/feed_tab"]
+        },
+        "surfaceId": "reels_tab",
+        "openedFrom": ["dm_thread"],
+        "identityViewId": "com.instagram.android:id/clips_author_username",
+        "actions": [{ "type": "back" }]
+      },
+      "surfaces": [
+        {
+          "id": "reels_tab",
+          "match": { "selectedViewIds": ["com.instagram.android:id/clips_tab"] },
+          "actions": [
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "back" }
+          ]
+        },
+        {
+          "id": "explore",
+          "match": {
+            "selectedViewIds": ["com.instagram.android:id/search_tab"],
+            "anyViewIds": ["com.instagram.android:id/grid_card_layout_container"]
+          },
+          "actions": [
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "back" }
+          ]
+        },
+        {
+          "id": "home_feed",
+          "match": { "selectedViewIds": ["com.instagram.android:id/feed_tab"] },
+          "actions": [
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "back" }
+          ]
+        }
+      ]
     },
     {
       "appId": "facebook",
       "package": "com.facebook.katana",
-      "allowed": [],
-      "surfaces": []
+      "allowed": [
+        { "id": "notifications", "match": { "selectedContentDescriptions": ["Notifications, tab 4 of 5"] } }
+      ],
+      "surfaces": [
+        {
+          "id": "reels",
+          "match": { "selectedContentDescriptions": ["Reels, tab 2 of 5"] },
+          "actions": [{ "type": "back" }]
+        },
+        {
+          "id": "reels",
+          "match": { "contentDescriptions": ["Reel details"] },
+          "actions": [{ "type": "back" }]
+        },
+        {
+          "id": "news_feed",
+          "match": { "selectedContentDescriptions": ["Home, tab 1 of 5"] },
+          "actions": [{ "type": "launch", "package": "com.facebook.orca" }, { "type": "back" }]
+        }
+      ]
     },
     {
       "appId": "youtube",
       "package": "com.google.android.youtube",
-      "allowed": [],
-      "surfaces": []
+      "allowed": [
+        { "id": "watch", "match": { "anyViewIds": ["com.google.android.youtube:id/watch_panel"] } },
+        {
+          "id": "search",
+          "match": {
+            "anyViewIds": ["com.google.android.youtube:id/search_edit_text", "com.google.android.youtube:id/search_query"]
+          }
+        },
+        { "id": "subscriptions", "match": { "selectedContentDescriptions": ["Subscriptions"] } }
+      ],
+      "surfaces": [
+        {
+          "id": "shorts",
+          "match": { "anyViewIds": ["com.google.android.youtube:id/reel_recycler"] },
+          "actions": [{ "type": "back" }]
+        },
+        {
+          "id": "home_feed",
+          "match": { "selectedContentDescriptions": ["Home"] },
+          "actions": [{ "type": "home" }]
+        }
+      ]
     },
     {
       "appId": "reddit",
       "package": "com.reddit.frontpage",
-      "allowed": [],
-      "surfaces": []
+      "allowed": [
+        { "id": "thread", "match": { "anyViewIds": ["post_detail_scaffold"] } }
+      ],
+      "surfaces": [
+        { "id": "video_feed", "match": { "anyViewIds": ["fbp_screen"] }, "actions": [{ "type": "home" }] },
+        { "id": "search_results", "match": { "anyViewIds": ["search_screen_surface"] }, "actions": [{ "type": "home" }] },
+        { "id": "subreddit_feed", "match": { "anyViewIds": ["subreddit_screen_surface"] }, "actions": [{ "type": "home" }] },
+        { "id": "popular", "match": { "anyViewIds": ["popular_screen_surface"] }, "actions": [{ "type": "home" }] },
+        { "id": "home_feed", "match": { "anyViewIds": ["home_screen_surface"] }, "actions": [{ "type": "home" }] }
+      ]
     }
   ]
 }

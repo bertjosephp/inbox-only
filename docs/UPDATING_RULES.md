@@ -58,8 +58,7 @@ come from inspector output captured on a real device.
    With Focus on, `scripts/inspect.sh` also prints a `decision …` line for each screen showing the IDs
    the rules saw and the outcome. That's the quickest way to see why a rule did or didn't fire.
 7. **Update the fixtures.** If a screen's structure changed, update its signature in
-   `app/src/test/java/…/domain/FixtureScreens.kt` (and `fixture_rules.json`) so the tests keep modelling
-   reality. Commit with `fix(rules): …`.
+   `app/src/test/java/…/domain/FixtureScreens.kt` so the tests keep modelling reality. Commit with `fix(rules): …`.
 8. **Release.** Bump `versionCode`/`versionName` in `app/build.gradle.kts`, update `CHANGELOG.md`, and
    tag `vX.Y.Z` to publish a signed APK.
 

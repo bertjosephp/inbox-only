@@ -99,3 +99,22 @@ of one rule-chosen node in the Reel viewer (e.g. the author label). It keeps onl
 **Why:** `TYPE_VIEW_SCROLLED` is off-limits for battery reasons, and comparing a hash is the cheapest
 way to tell Reels apart. If no node is suitable, the tracker allows the opened Reel until the viewer
 is left, so Reel-from-chat stays usable rather than broken.
+
+## ADR-016: One bounded pass over the window instead of targeted ID lookups
+**Decision:** `ScreenSignatureReader` visits each window's nodes once (capped at 2,000) and compares them
+against the rule-referenced IDs and descriptions in memory, instead of calling
+`findAccessibilityNodeInfosByViewId` / `findAccessibilityNodeInfosByText`.
+**Why:** The real captures showed that Reddit (and parts of Instagram and YouTube) are built with Jetpack
+Compose, which exposes bare tags like `home_screen_surface` rather than `package:id/name` resources. The
+framework's ID lookup resolves real resource IDs, so it would never find those tags, and Reddit would
+silently never be blocked. This departs from the original "no full-tree walks" goal, but the cost stays
+small: real screens have a few hundred nodes, checks are throttled to at most 4 a second, and they only
+happen while Focus is on and one of the four apps is in front.
+
+## ADR-017: Facebook rules use tab descriptions; no "Video" surface
+**Decision:** Facebook's view IDs are obfuscated (`(name removed)`), so its rules match the bottom tabs'
+content descriptions (`"Home, tab 1 of 5"`, `"Reels, tab 2 of 5"`) and the Reel viewer's
+`"Reel details"`. The "Video / Watch" surface was removed from `BlockCatalog`.
+**Why:** The owner's Facebook has no Video/Watch screen; its tabs are Home, Reels, Groups, Notifications and
+Profile. Descriptions are English-UI strings, so a language change or a badge in the label can stop a
+match. That fails open, and UPDATING_RULES.md covers the fix.

@@ -47,8 +47,12 @@ Focus state has a single source of truth (`FocusStateStore`), always read throug
 `FocusController.reconcile(...)` so expired states resolve correctly even if an alarm was late.
 
 ## Rules and fixtures
-- `assets/rules.json` is a placeholder (`"placeholder": true`) until real captures exist; placeholder rules
-  block nothing. Unit tests use `src/test/resources/fixture_rules.json` + `FixtureScreens.kt` (fake IDs).
+- `assets/rules.json` holds real selectors captured on the owner's Galaxy S25+. `FixtureScreens.kt` holds
+  the matching real signatures; `BlockDeciderTest` runs the shipped rules against them. Placeholder
+  rules (`"placeholder": true`) block nothing.
+- Compose screens expose bare tags (`home_screen_surface`), so `ScreenSignatureReader` walks the window
+  once instead of using `findAccessibilityNodeInfosByViewId`. Facebook IDs are obfuscated: match tab
+  content descriptions.
 - `ServiceConfigTest` keeps the service XML `packageNames` equal to the packages in rules.json.
 - Never set `AccessibilityServiceInfo.packageNames` to null at runtime (null = all apps).
 

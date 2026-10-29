@@ -37,6 +37,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation (M8): final README, `docs/TECHNICAL.md` (architecture, Mermaid diagrams, rules format,
   build-from-source, release signing), `docs/UPDATING_RULES.md`, `docs/TESTING.md`, `docs/DECISIONS.md`.
 
+- Real selectors (Checkpoint A): `rules.json` v2 written only from screens captured on a Galaxy S25+;
+  test fixtures replaced with the real captured signatures, and tests now run the shipped rules.
+
+### Changed
+- `ScreenSignatureReader` makes one bounded pass over the window instead of targeted ID lookups, because
+  Compose screens (Reddit and others) expose bare tags that ID lookup can't find.
+
+### Removed
+- Facebook "Video / Watch" surface: it doesn't exist in the current Facebook app.
+
 ### Fixed
 - The tile is only updated while Quick Settings is listening, avoiding updates after the shade closed. (M8)
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,

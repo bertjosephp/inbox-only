@@ -18,7 +18,7 @@ something that blocks only the scroll.
 | App | Blocked while Focus is on | Still works |
 |---|---|---|
 | Instagram | Reels tab, Explore, Home feed | DMs and inbox, notifications, a Reel a friend sent you in a chat |
-| Facebook | Reels, Video, News feed | Notifications |
+| Facebook | Reels, News feed | Notifications |
 | YouTube | Shorts, Home feed | Search, Subscriptions, any video you open directly |
 | Reddit | Feeds, Popular, subreddits, search results, the video feed | A single thread, e.g. one you opened from a Google result |
 

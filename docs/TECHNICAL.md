@@ -14,11 +14,11 @@ accessibility event → ScreenSignature → BlockDecider → BlockThrottle → a
    `TYPE_WINDOW_CONTENT_CHANGED` (something inside it changed). The events come only from the four target
    packages, and only while Focus is on. Window-state events are handled immediately; content-changed
    events are throttled to one check per 250 ms.
-2. **Signature.** `ScreenSignatureReader` asks the framework for only the view IDs and content
-   descriptions that `rules.json` mentions for that app, using `findAccessibilityNodeInfosByViewId` and
-   `findAccessibilityNodeInfosByText` (filtered to exact content-description matches). It records which
-   are present and which are *selected* (e.g. the active tab). There's no full tree walk and no text is
-   kept. The one exception is an optional in-memory hash used to tell Reels apart.
+2. **Signature.** `ScreenSignatureReader` visits the window's nodes once (capped at 2,000) and keeps
+   only the view IDs and content descriptions that `rules.json` mentions for that app. It records which
+   are present and which are *selected* (e.g. the active tab). No text is kept. The one exception is an
+   optional in-memory hash used to tell Reels apart. A walk is needed because Compose screens expose
+   bare tags (`home_screen_surface`) that the framework's ID lookup can't resolve (ADR-016).
 3. **Decision.** The pure `BlockDecider.decide(signature, rules, settings, tracker)` returns `Allow` or
    `Block(surfaceId, actions)`:
    1. No rules for the package, or placeholder rules → Allow.
@@ -152,7 +152,10 @@ fields are ignored, so newer files still load in older builds.
 | `contentDescriptions` | at least one node has exactly this content description |
 | `selectedContentDescriptions` | all of these are on a selected node |
 
-View IDs are fully qualified (`package:id/name`), exactly as the inspector prints them.
+Copy view IDs exactly as the inspector prints them: classic views are fully qualified
+(`com.instagram.android:id/feed_tab`), Compose tags are bare (`home_screen_surface`). Facebook obfuscates
+its view IDs, so its rules use tab content descriptions such as `"Home, tab 1 of 5"`. Those are
+English-UI strings and can change when a badge is added.
 `RulesValidator` (run by `RulesTest` against the shipped file) rejects unknown app or surface IDs, empty
 matches, empty action lists and dangling `openedFrom` references.
 
@@ -190,8 +193,9 @@ matches, empty action lists and dangling `openedFrom` references.
 - **Inert when Focus is off.** On every Focus change the service calls `setServiceInfo()` with
   `eventTypes = 0` (off) or the two types (on). `packageNames` is never cleared: null would mean *all
   apps*.
-- **Minimal work per event.** Two event types; content changes throttled to 250 ms; lookups only for
-  rule-referenced IDs; nodes recycled on Android < 13.
+- **Minimal work per event.** Two event types; content changes throttled to 250 ms (at most 4 checks a
+  second); one bounded pass over the window per check, comparing only against rule-referenced IDs;
+  nodes recycled on Android < 13.
 - **No polling, wakelocks, foreground service or background workers.** Alarms fire only at edges.
 - **Free countdown.** The tile subtitle is computed in `onStartListening()`, which only runs while the
   shade is open. There's no ticking timer.
@@ -272,7 +276,6 @@ app/
   src/debug/…/debug/                          # inspector (debug only)
   src/release/…/debug/                        # inspector no-op
   src/test/…                                  # JVM unit tests
-  src/test/resources/fixture_rules.json       # invented IDs for tests
   src/testDebug/…                             # tests for debug-only code
 docs/  scripts/  .github/workflows/
 gradle/libs.versions.toml                     # version catalog
@@ -290,8 +293,8 @@ gradle/libs.versions.toml                     # version catalog
 - **Config guards:**
   - The service XML package filter equals the packages in rules.json.
   - The shipped rules.json parses and validates.
-- **Fixtures:** `src/test/resources/fixture_rules.json` plus `FixtureScreens.kt` model each screen with
-  invented `fixture:` IDs. After real captures, fixtures are rewritten from real signatures.
+- **Fixtures:** `FixtureScreens.kt` holds real screen signatures captured on the owner's phone, reduced to
+  what the rules reference, and `BlockDeciderTest` runs the *shipped* `rules.json` against them.
 - **On-device acceptance:** [TESTING.md](TESTING.md).
 
 ## 12. How to add a new app or surface
@@ -304,7 +307,7 @@ gradle/libs.versions.toml                     # version catalog
    `res/xml/accessibility_service_config.xml`, and to `<queries>` in the manifest if you'll launch it.
 4. **Rules.** Add an `apps` entry to `assets/rules.json`: `allowed` screens first (always include the
    app's messaging screens), then `surfaces` with actions. Bump `version`.
-5. **Tests.** Add fixture signatures for the new screens to `FixtureScreens.kt` and
-   `fixture_rules.json`, and cases to `BlockDeciderTest`. `ServiceConfigTest` and `RulesTest` will catch
+5. **Tests.** Add the captured signatures for the new screens to `FixtureScreens.kt`, and cases to
+   `BlockDeciderTest`. `ServiceConfigTest` and `RulesTest` will catch
    a mismatched package or invalid rule.
 6. **Docs.** Update the README table and `CHANGELOG.md`.

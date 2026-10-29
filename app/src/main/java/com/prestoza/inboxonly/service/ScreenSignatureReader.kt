@@ -1,6 +1,11 @@
-// ScreenSignatureReader: builds a ScreenSignature from the live screen. It never walks the whole view
-// tree: it asks the framework only for the specific view IDs and content descriptions that rules.json
-// mentions for this app, and records whether they're present and selected. No text is kept.
+// ScreenSignatureReader: builds a ScreenSignature from the live screen. It visits the window's nodes
+// once and keeps only what rules.json mentions for this app: which referenced view IDs and content
+// descriptions are present, and whether they're selected. No text is kept.
+//
+// Why a walk and not findAccessibilityNodeInfosByViewId: Reddit (and parts of Instagram and YouTube)
+// are built with Jetpack Compose, whose view IDs are bare tags like "home_screen_surface" rather than
+// real "package:id/name" resources. The framework's ID lookup resolves real resources only, so it can't
+// find those. See docs/DECISIONS.md (ADR-016).
 package com.prestoza.inboxonly.service
 
 import android.view.accessibility.AccessibilityNodeInfo
@@ -9,31 +14,41 @@ import com.prestoza.inboxonly.domain.ScreenSignature
 
 /** Reads the minimal, content-free [ScreenSignature] that [com.prestoza.inboxonly.domain.BlockDecider] needs. */
 object ScreenSignatureReader {
-    /** Builds the signature for [root], looking up only what [app]'s rules reference. */
+    // Real screens in the target apps have a few hundred nodes; the cap bounds the cost of a pathological one.
+    private const val MAX_NODES = 2_000
+
+    /** Builds the signature for [root], matching only what [app]'s rules reference. */
     fun read(
         root: AccessibilityNodeInfo,
         packageName: String,
         windowClass: String?,
         app: AppRules,
     ): ScreenSignature {
+        val wantedIds = app.referencedViewIds
+        val wantedDescriptions = app.referencedContentDescriptions
+        val identityViewId = app.reelViewer?.identityViewId
+
         val viewIds = mutableSetOf<String>()
         val selectedViewIds = mutableSetOf<String>()
-        for (id in app.referencedViewIds) {
-            withNodes(root.findAccessibilityNodeInfosByViewId(id)) { nodes ->
-                if (nodes.isNotEmpty()) viewIds += id
-                if (nodes.any { it.isSelected }) selectedViewIds += id
-            }
-        }
-
         val descriptions = mutableSetOf<String>()
         val selectedDescriptions = mutableSetOf<String>()
-        for (description in app.referencedContentDescriptions) {
-            // findAccessibilityNodeInfosByText matches text *or* content description, case-insensitively and
-            // by substring, so keep only nodes whose content description is exactly the one we asked for.
-            withNodes(root.findAccessibilityNodeInfosByText(description)) { nodes ->
-                val exact = nodes.filter { it.contentDescription?.toString() == description }
-                if (exact.isNotEmpty()) descriptions += description
-                if (exact.any { it.isSelected }) selectedDescriptions += description
+        var reelIdentity: Int? = null
+
+        forEachNode(root) { node ->
+            val id = node.viewIdResourceName
+            if (id != null && id in wantedIds) {
+                viewIds += id
+                if (node.isSelected) selectedViewIds += id
+            }
+            // An opaque hash of the Reel's identifying label (e.g. its author), so a swipe to another Reel
+            // can be noticed. Only the hash is kept, in memory; it's never logged or stored.
+            if (id != null && id == identityViewId && reelIdentity == null) {
+                reelIdentity = (node.contentDescription ?: node.text)?.toString()?.hashCode()
+            }
+            val description = node.contentDescription?.toString()
+            if (description != null && description in wantedDescriptions) {
+                descriptions += description
+                if (node.isSelected) selectedDescriptions += description
             }
         }
 
@@ -44,27 +59,28 @@ object ScreenSignatureReader {
             selectedViewIds = selectedViewIds,
             contentDescriptions = descriptions,
             selectedContentDescriptions = selectedDescriptions,
-            reelIdentity = app.reelViewer?.identityViewId?.let { reelIdentity(root, it) },
+            reelIdentity = reelIdentity,
         )
     }
 
-    // An opaque hash of the Reel's identifying label (e.g. its author), so a swipe to another Reel can be
-    // noticed. Only the hash leaves this function; it lives in memory and is never logged or stored.
-    private fun reelIdentity(
+    // Depth-first over the window, without recursion. The caller owns (and recycles) the root; every
+    // child fetched here is recycled here.
+    private inline fun forEachNode(
         root: AccessibilityNodeInfo,
-        viewId: String,
-    ): Int? =
-        withNodes(root.findAccessibilityNodeInfosByViewId(viewId)) { nodes ->
-            nodes.firstNotNullOfOrNull { (it.contentDescription ?: it.text)?.toString()?.hashCode() }
+        visit: (AccessibilityNodeInfo) -> Unit,
+    ) {
+        val stack = ArrayDeque<AccessibilityNodeInfo>()
+        stack.addLast(root)
+        var visited = 0
+        while (stack.isNotEmpty()) {
+            val node = stack.removeLast()
+            try {
+                if (visited++ >= MAX_NODES) continue
+                visit(node)
+                for (i in 0 until node.childCount) node.getChild(i)?.let(stack::addLast)
+            } finally {
+                if (node !== root) node.recycleCompat()
+            }
         }
-
-    private inline fun <T> withNodes(
-        nodes: List<AccessibilityNodeInfo>,
-        block: (List<AccessibilityNodeInfo>) -> T,
-    ): T =
-        try {
-            block(nodes)
-        } finally {
-            nodes.forEach { it.recycleCompat() }
-        }
+    }
 }

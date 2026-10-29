@@ -28,8 +28,11 @@ class RulesTest {
     }
 
     @Test
-    fun `fixture rules are valid`() {
-        assertEquals(emptyList<String>(), RulesValidator.problems(FixtureScreens.rules))
+    fun `shipped rules are real, not placeholders, and cover every app`() {
+        val rules = FixtureScreens.rules
+        assertTrue(!rules.placeholder)
+        assertEquals(setOf("instagram", "facebook", "youtube", "reddit"), rules.apps.map { it.appId }.toSet())
+        rules.apps.forEach { assertTrue("${it.appId} has no allowed screens", it.allowed.isNotEmpty()) }
     }
 
     @Test

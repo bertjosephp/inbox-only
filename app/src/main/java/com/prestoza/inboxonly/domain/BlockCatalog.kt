@@ -36,7 +36,6 @@ object BlockCatalog {
                 surfaces =
                     listOf(
                         Surface("reels", "Reels"),
-                        Surface("video", "Video / Watch"),
                         Surface("news_feed", "News feed"),
                     ),
             ),
