@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- An inbox tray: "keep the messages". Drawn inside the 72dp safe zone of a 108dp adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,38h36a4,4 0,0 1,4 4v24a4,4 0,0 1,-4 4H36a4,4 0,0 1,-4 -4V42a4,4 0,0 1,4 -4zM36,56v10h36V56h-9a9,9 0,0 1,-18 0z" />
+</vector>

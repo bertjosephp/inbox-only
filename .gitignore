@@ -1,0 +1,21 @@
+# Working prompt, not project documentation (its lasting content lives in CLAUDE.md and docs/).
+SPEC.md
+
+# Gradle / build output
+.gradle/
+build/
+.kotlin/
+
+# Local machine config (SDK path)
+local.properties
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Signing material must never be committed
+*.jks
+*.keystore
+keystore.properties
