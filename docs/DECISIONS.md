@@ -43,3 +43,19 @@ window, and also running into it) is rare and harmless.
 A window whose start equals its end is invalid (no window).
 **Why:** That's how alarm clocks and calendars treat overnight events. DST gaps shift times forward and
 repeated times use the first occurrence (java.time defaults).
+
+## ADR-008: Exact alarms via USE_EXACT_ALARM
+**Decision:** Declare `USE_EXACT_ALARM` (Android 13+) and `SCHEDULE_EXACT_ALARM` with
+`maxSdkVersion="32"` (Android 12/12L only); schedule with `setExactAndAllowWhileIdle`.
+**Why:** Doze delays inexact alarms by many minutes, which would make breaks and schedule edges visibly
+late. `USE_EXACT_ALARM` is auto-granted and can't be revoked by the user. Google Play only allows it for
+alarm-clock and calendar apps, but this app is sideloaded and never reviewed by Play.
+`SCHEDULE_EXACT_ALARM` can be revoked from settings and would need a permission prompt. Even when an
+alarm is late, `reconcile()` corrects the state the next time anything reads it.
+
+## ADR-009: Regular (non-"active") tile, rendered only while the shade is open
+**Decision:** The tile doesn't use `META_DATA_ACTIVE_TILE`. Status is computed in `onStartListening`,
+which the system calls whenever the shade shows the tile, and it re-renders if the stored state changes
+while the shade stays open.
+**Why:** An "active" tile only gets `onStartListening` when the app requests it, so a countdown subtitle
+would go stale. A regular tile costs nothing while the shade is closed and needs no ticking timer.
