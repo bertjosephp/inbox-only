@@ -40,7 +40,8 @@ come from inspector output captured on a real device.
    sharing it anywhere and delete anything personal (usernames, short messages).
 4. **Find a distinguishing feature.** Compare the blocks:
    - A **selected tab** is the most robust signal: `selectedViewIds`, or `selectedContentDescriptions`
-     if the tabs share an ID.
+     if the tabs share an ID. Check a cold start too: Instagram selects no tab until you tap one, which
+     is what `noneSelectedViewIds` is for.
    - A **view ID that only exists on that screen**: `allViewIds` / `anyViewIds`.
    - Use `noneViewIds` to tell apart two screens that share most IDs (e.g. the Reel viewer inside the
      Reels tab has the bottom bar; one opened from a DM doesn't).

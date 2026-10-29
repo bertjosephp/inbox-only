@@ -102,6 +102,9 @@ data class Match(
     val anyViewIds: List<String> = emptyList(),
     val noneViewIds: List<String> = emptyList(),
     val selectedViewIds: List<String> = emptyList(),
+    // Instagram marks no tab as selected until one is tapped, so a cold-started feed is recognised by
+    // "tab bar present, nothing selected".
+    val noneSelectedViewIds: List<String> = emptyList(),
     val contentDescriptions: List<String> = emptyList(),
     val selectedContentDescriptions: List<String> = emptyList(),
 ) {
@@ -109,11 +112,12 @@ data class Match(
     val isEmpty: Boolean
         get() =
             windowClasses.isEmpty() && allViewIds.isEmpty() && anyViewIds.isEmpty() && noneViewIds.isEmpty() &&
-                selectedViewIds.isEmpty() && contentDescriptions.isEmpty() && selectedContentDescriptions.isEmpty()
+                selectedViewIds.isEmpty() && noneSelectedViewIds.isEmpty() && contentDescriptions.isEmpty() &&
+                selectedContentDescriptions.isEmpty()
 
     /** View IDs this match needs the service to look up. */
     val referencedViewIds: List<String>
-        get() = allViewIds + anyViewIds + noneViewIds + selectedViewIds
+        get() = allViewIds + anyViewIds + noneViewIds + selectedViewIds + noneSelectedViewIds
 
     /** True when [signature] satisfies every condition. */
     fun matches(signature: ScreenSignature): Boolean {
@@ -123,6 +127,7 @@ data class Match(
             (anyViewIds.isEmpty() || anyViewIds.any { it in signature.viewIds }) &&
             noneViewIds.none { it in signature.viewIds } &&
             signature.selectedViewIds.containsAll(selectedViewIds) &&
+            noneSelectedViewIds.none { it in signature.selectedViewIds } &&
             (contentDescriptions.isEmpty() || contentDescriptions.any { it in signature.contentDescriptions }) &&
             signature.selectedContentDescriptions.containsAll(selectedContentDescriptions)
     }

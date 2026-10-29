@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "placeholder": false,
   "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
@@ -44,6 +44,24 @@
         {
           "id": "home_feed",
           "match": { "selectedViewIds": ["com.instagram.android:id/feed_tab"] },
+          "actions": [
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "back" }
+          ]
+        },
+        {
+          "id": "home_feed",
+          "match": {
+            "allViewIds": ["com.instagram.android:id/feed_tab"],
+            "contentDescriptions": ["Instagram Home Feed"],
+            "noneSelectedViewIds": [
+              "com.instagram.android:id/feed_tab",
+              "com.instagram.android:id/clips_tab",
+              "com.instagram.android:id/direct_tab",
+              "com.instagram.android:id/search_tab",
+              "com.instagram.android:id/profile_tab"
+            ]
+          },
           "actions": [
             { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
             { "type": "back" }

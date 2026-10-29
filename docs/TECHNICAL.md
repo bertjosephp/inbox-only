@@ -149,6 +149,7 @@ fields are ignored, so newer files still load in older builds.
 | `anyViewIds` | at least one is on screen |
 | `noneViewIds` | none of these are on screen |
 | `selectedViewIds` | all of these are on screen *and selected* (e.g. the active tab) |
+| `noneSelectedViewIds` | none of these is selected (e.g. Instagram right after launch, before any tab is tapped) |
 | `contentDescriptions` | at least one node has exactly this content description |
 | `selectedContentDescriptions` | all of these are on a selected node |
 

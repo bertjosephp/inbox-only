@@ -40,6 +40,18 @@ class BlockDeciderTest {
     }
 
     @Test
+    fun `instagram blocks the home feed right after launch, before any tab is selected`() {
+        assertBlocked("home_feed", FixtureScreens.igColdStartFeed)
+    }
+
+    @Test
+    fun `instagram profile tab is not mistaken for the cold-start feed`() {
+        assertAllowed(
+            FixtureScreens.igColdStartFeed.copy(selectedViewIds = setOf("com.instagram.android:id/profile_tab")),
+        )
+    }
+
+    @Test
     fun `instagram blocks redirect to the DM inbox, then fall back to back`() {
         assertEquals(listOf(toInbox, BlockAction.Back), (decide(FixtureScreens.igHomeFeed) as Decision.Block).actions)
     }
