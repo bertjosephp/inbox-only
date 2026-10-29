@@ -27,6 +27,7 @@ object ScreenSignatureReader {
         val wantedIds = app.referencedViewIds
         val wantedDescriptions = app.referencedContentDescriptions
         val identityViewId = app.reelViewer?.identityViewId
+        val identityPattern = app.reelIdentityDescriptionRegex
 
         val viewIds = mutableSetOf<String>()
         val selectedViewIds = mutableSetOf<String>()
@@ -46,6 +47,11 @@ object ScreenSignatureReader {
                 reelIdentity = (node.contentDescription ?: node.text)?.toString()?.hashCode()
             }
             val description = node.contentDescription?.toString()
+            if (identityPattern != null && reelIdentity == null && description != null &&
+                identityPattern.matches(description)
+            ) {
+                reelIdentity = description.hashCode()
+            }
             if (description != null && description in wantedDescriptions) {
                 descriptions += description
                 if (node.isSelected) selectedDescriptions += description

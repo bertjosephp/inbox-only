@@ -9,6 +9,7 @@ import com.prestoza.inboxonly.domain.Rules
 import com.prestoza.inboxonly.domain.RulesValidator
 import com.prestoza.inboxonly.domain.SurfaceRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -125,5 +126,22 @@ class RulesTest {
         assertTrue(problems.any { "no actions" in it })
         assertTrue(problems.any { "openedFrom 'dm_thread'" in it })
         assertTrue(problems.any { "tiktok" in it })
+    }
+
+    @Test
+    fun `a reel viewer that can never be opened from a chat is rejected`() {
+        val viewer = ReelViewerRule(Match(allViewIds = listOf("fixture:id/r")), "reels_tab")
+        val rules = Rules(1, apps = listOf(AppRules("instagram", "p", reelViewer = viewer)))
+        assertTrue(RulesValidator.problems(rules).any { "needs openedFrom" in it })
+    }
+
+    @Test
+    fun `facebook reel identity pattern matches only the creator label`() {
+        val pattern = requireNotNull(FixtureScreens.rules.forPackage(FixtureScreens.FB)?.reelIdentityDescriptionRegex)
+        // Descriptions from capture 3 (public creators' labels).
+        assertTrue(pattern.matches("View Eric Nam 에릭남's reels"))
+        assertTrue(pattern.matches("View Chief Kweef's reels"))
+        listOf("Reel details", "Navigate to your Reels profile", "Follow Chief Kweef", "33K reactions", "Back")
+            .forEach { assertFalse(it, pattern.matches(it)) }
     }
 }

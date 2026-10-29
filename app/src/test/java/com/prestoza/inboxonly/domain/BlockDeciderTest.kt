@@ -128,6 +128,44 @@ class BlockDeciderTest {
         assertAllowed(FixtureScreens.fbMenu)
     }
 
+    private fun openFromMessenger(tracker: ReelFromChatTracker) =
+        BlockDecider.onWindowOpened(FixtureScreens.FB, FixtureScreens.FB_IMMERSIVE, rules, tracker)
+
+    private val toMessenger = listOf(BlockAction.Launch("com.facebook.orca"), BlockAction.Back)
+
+    @Test
+    fun `facebook reel opened from messenger plays, swiping on opens messenger`() {
+        val tracker = ReelFromChatTracker()
+        decide(FixtureScreens.fbFeed, tracker = tracker)
+        openFromMessenger(tracker)
+        assertEquals(Decision.Allow, decide(FixtureScreens.fbReelFromMessenger(1), tracker = tracker))
+        assertEquals(Decision.Allow, decide(FixtureScreens.fbReelFromMessenger(1), tracker = tracker))
+        val swiped = decide(FixtureScreens.fbReelFromMessenger(2), tracker = tracker)
+        assertEquals(Decision.Block("reels", toMessenger), swiped)
+        assertTrue(decide(FixtureScreens.fbFeedAfterMessengerReel, tracker = tracker) is Decision.Block)
+    }
+
+    @Test
+    fun `a second reel from messenger plays too`() {
+        val tracker = ReelFromChatTracker()
+        openFromMessenger(tracker)
+        decide(FixtureScreens.fbReelFromMessenger(1), tracker = tracker)
+        openFromMessenger(tracker)
+        assertEquals(Decision.Allow, decide(FixtureScreens.fbReelFromMessenger(2), tracker = tracker))
+    }
+
+    @Test
+    fun `facebook reel viewer without the messenger window opening is blocked`() {
+        assertEquals(Decision.Block("reels", toMessenger), decide(FixtureScreens.fbReelFromMessenger(1)))
+    }
+
+    @Test
+    fun `facebook reels opened inside facebook are still blocked`() {
+        val tracker = ReelFromChatTracker()
+        openFromMessenger(tracker)
+        assertBlocked("reels", FixtureScreens.fbReelDetails)
+    }
+
     // ---- YouTube ----
 
     @Test

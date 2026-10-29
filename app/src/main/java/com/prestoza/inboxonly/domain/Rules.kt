@@ -48,6 +48,9 @@ data class AppRules(
             .toSet()
     }
 
+    /** Compiled [ReelViewerRule.identityDescriptionPattern], if any. */
+    val reelIdentityDescriptionRegex: Regex? by lazy { reelViewer?.identityDescriptionPattern?.let(::Regex) }
+
     /** Every content description any rule for this app mentions. */
     val referencedContentDescriptions: Set<String> by lazy {
         (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match))
@@ -79,15 +82,21 @@ data class SurfaceRule(
  *
  * @property surfaceId the [BlockCatalog] surface whose toggle governs Reels in this app.
  * @property openedFrom IDs of [AppRules.allowed] screens that count as "a chat" for the allow-one rule.
+ * @property openedFromWindowClasses windows that only open when a Reel is tapped in a chat in another
+ *   app (Facebook's viewer opened from Messenger). Opening one counts as coming from a chat.
  * @property identityViewId a view whose content description (or text) differs per Reel, so swiping to
  *   another Reel can be noticed. Hashed in memory only; never logged or stored. Optional.
+ * @property identityDescriptionPattern the same idea for apps with obfuscated view IDs: the first
+ *   content description matching this regex identifies the Reel. Optional.
  */
 @Serializable
 data class ReelViewerRule(
     val match: Match,
     val surfaceId: String,
-    val openedFrom: List<String>,
+    val openedFrom: List<String> = emptyList(),
+    val openedFromWindowClasses: List<String> = emptyList(),
     val identityViewId: String? = null,
+    val identityDescriptionPattern: String? = null,
     val actions: List<BlockAction> = listOf(BlockAction.Back),
 )
 

@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "placeholder": false,
   "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
@@ -75,6 +75,16 @@
       "allowed": [
         { "id": "notifications", "match": { "selectedContentDescriptions": ["Notifications, tab 4 of 5"] } }
       ],
+      "reelViewer": {
+        "match": {
+          "windowClasses": ["com.facebook.katana.immersiveactivity.ImmersiveActivity"],
+          "contentDescriptions": ["Reel details"]
+        },
+        "surfaceId": "reels",
+        "openedFromWindowClasses": ["com.facebook.katana.immersiveactivity.ImmersiveActivity"],
+        "identityDescriptionPattern": "View .+'s reels",
+        "actions": [{ "type": "launch", "package": "com.facebook.orca" }, { "type": "back" }]
+      },
       "surfaces": [
         {
           "id": "reels",

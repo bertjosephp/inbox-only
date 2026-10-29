@@ -61,4 +61,21 @@ object BlockDecider {
 
         return Decision.Allow
     }
+
+    /**
+     * A new window opened in [packageName]. If it's one that only opens from a chat in another app
+     * ([ReelViewerRule.openedFromWindowClasses]), the next Reel counts as opened from a chat.
+     *
+     * Called on the window-state event itself, because the window's content (and even the active
+     * window) may not be ready yet when that event arrives.
+     */
+    fun onWindowOpened(
+        packageName: String,
+        windowClass: String,
+        rules: Rules,
+        tracker: ReelFromChatTracker,
+    ) {
+        val viewer = rules.forPackage(packageName)?.reelViewer ?: return
+        if (windowClass in viewer.openedFromWindowClasses) tracker.onAllowedScreen(isChat = true)
+    }
 }

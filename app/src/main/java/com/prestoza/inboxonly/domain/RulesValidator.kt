@@ -34,6 +34,9 @@ object RulesValidator {
                     val prefix = "${app.appId}/reelViewer"
                     if (viewer.surfaceId !in surfaceIds) add("$prefix: unknown surface id ${viewer.surfaceId}")
                     if (viewer.match.isEmpty) add("$prefix: empty match")
+                    if (viewer.openedFrom.isEmpty() && viewer.openedFromWindowClasses.isEmpty()) {
+                        add("$prefix: needs openedFrom or openedFromWindowClasses")
+                    }
                     viewer.openedFrom
                         .filter { it !in allowedIds }
                         .forEach { add("$prefix: openedFrom '$it' is not an allowed screen") }
