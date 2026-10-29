@@ -168,3 +168,14 @@ replaced by related cards as you scroll, so that can't be the identity. Known li
 YouTube is closed doesn't fire the reset window; it still works because a linked video shows no title,
 but if YouTube ever starts showing one, that first video could be blocked. Closing the block screen and
 reopening YouTube on the blocked video starts a new visit; that takes deliberate effort, so it's accepted.
+
+## ADR-023: Pause YouTube before its next-video block screen
+**Decision:** A `followOn` rule may set `pauseMedia`. YouTube's does: before showing the block screen, the
+service sends `KEYCODE_MEDIA_PAUSE` through `AudioManager.dispatchMediaKeyEvent` and waits 150 ms. The
+owner approved widening the "global actions or intents" hard rule (CLAUDE.md) for this one case.
+**Why:** On device, YouTube Premium shrank the still-playing blocked video into a picture-in-picture
+window that stays on top of everything, including the block screen; expanding it led straight back to
+the watch page. PiP only starts for a playing video, so pausing first prevents it, and also stops
+Premium's background audio. The media key is the same system signal a headphone button sends: it
+reaches the active player's media session and touches nothing in YouTube's UI. It's limited to the
+next-video rule, where a video is certainly playing, so it can't pause another app's music.

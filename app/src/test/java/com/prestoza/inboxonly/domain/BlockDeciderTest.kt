@@ -186,7 +186,7 @@ class BlockDeciderTest {
 
     // ---- YouTube: one video per visit ----
 
-    private val nextVideo = Decision.Block("next_videos", listOf(BlockAction.Home))
+    private val nextVideo = Decision.Block("next_videos", listOf(BlockAction.Home), pauseMedia = true)
 
     private fun ytDecide(
         screen: ScreenSignature,

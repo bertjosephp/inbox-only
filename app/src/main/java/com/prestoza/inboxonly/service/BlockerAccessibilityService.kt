@@ -7,8 +7,10 @@ package com.prestoza.inboxonly.service
 import android.accessibilityservice.AccessibilityService
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.net.toUri
 import com.prestoza.inboxonly.appContainer
@@ -29,6 +31,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 /**
  * Blocks doomscroll surfaces in the four target apps while Focus is on.
@@ -165,20 +168,46 @@ class BlockerAccessibilityService : AccessibilityService() {
             }
 
             is BlockPlan.Execute -> {
-                // A fresh block shows the block screen; its buttons offer the way out. If the surface is
-                // back right after that (or after an action), act directly so the user can't get stuck.
-                val intent = BlockScreenActivity.intent(this, packageName, appId, decision)
-                // No window animation: the page draws its own fade + zoom (see BlockScreenActivity).
-                if (!plan.escalated && startSafely(intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))) {
+                if (decision.pauseMedia) {
+                    // Pause first and give the app a moment, or YouTube shrinks the still-playing video
+                    // into a floating player on top of the block screen. Recording now holds the cooldown.
+                    pauseMedia()
                     throttle.recordScreenShown(packageName, decision.surfaceId, now)
+                    handler.postDelayed({ execute(packageName, appId, decision, plan, now) }, PAUSE_BEFORE_SCREEN_MS)
                 } else {
-                    val performed = plan.actions.firstOrNull(::perform) ?: return
-                    throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+                    execute(packageName, appId, decision, plan, now)
                 }
-                // One count per block event, not per accessibility event.
-                appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
             }
         }
+    }
+
+    private fun execute(
+        packageName: String,
+        appId: String,
+        decision: Decision.Block,
+        plan: BlockPlan.Execute,
+        now: Instant,
+    ) {
+        // A fresh block shows the block screen; its buttons offer the way out. If the surface is back right
+        // after that (or after an action), act directly so the user can't get stuck.
+        val intent = BlockScreenActivity.intent(this, packageName, appId, decision)
+        // No window animation: the page draws its own fade + zoom (see BlockScreenActivity).
+        if (!plan.escalated && startSafely(intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))) {
+            throttle.recordScreenShown(packageName, decision.surfaceId, now)
+        } else {
+            val performed = plan.actions.firstOrNull(::perform) ?: return
+            throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+        }
+        // One count per block event, not per accessibility event.
+        appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
+    }
+
+    // The system media-pause signal, as a headphone button sends it. It goes to whichever app is playing
+    // (here YouTube); nothing in YouTube's screens is touched.
+    private fun pauseMedia() {
+        val audio = getSystemService(AudioManager::class.java) ?: return
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
     }
 
     private fun goBackAfterBlockScreen(
@@ -245,6 +274,9 @@ class BlockerAccessibilityService : AccessibilityService() {
     private companion object {
         const val CONTENT_THROTTLE_MS = 250L
         const val COOLDOWN_RECHECK_SLACK_MS = 50L
+
+        // Long enough for the playing app to handle the pause before the block screen covers it.
+        const val PAUSE_BEFORE_SCREEN_MS = 150L
 
         // The page has faded out before it asks; this just lets its window go so Back reaches the app.
         const val BACK_AFTER_SCREEN_MS = 150L

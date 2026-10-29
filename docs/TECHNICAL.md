@@ -142,6 +142,7 @@ fields are ignored, so newer files still load in older builds.
       "surfaceId": "next_videos",
       "identityViewId": "…",    // label that differs per item, seen while it loads (hashed in memory)
       "resetWindowClasses": ["…"], // windows whose opening starts a new visit (a link opening the app)
+      "pauseMedia": true,       // send the system media-pause key first (stops YouTube's floating player)
       "actions": [{ "type": "home" }]
     },
     "surfaces": [               // blockable; first match wins

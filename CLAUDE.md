@@ -9,8 +9,9 @@ The owner knows Swift/Java but is new to Android: explain Android concepts brief
 - **Never invent selectors.** View IDs, window class names and content descriptions for target apps come
   only from real device captures (`scripts/inspect.sh`). If you don't have real data, leave the rule as a
   placeholder (`"placeholder": true`) and say so. Test fixtures use obviously fake IDs (`fixture:…`).
-- **No ban risk:** only observe UI via AccessibilityService and respond with global actions (back/home)
-  or by launching an intent. Never modify, hook or inject into other apps.
+- **No ban risk:** only observe UI via AccessibilityService and respond with global actions (back/home),
+  by launching an intent, or (only where a rule sets `pauseMedia`) the system media-pause key, as a
+  headphone button sends it. Never modify, hook or inject into other apps.
 - **No INTERNET permission.** CI fails if it appears (`scripts/check-no-internet.sh`).
 - **Never read, log or store message content.** Match structure only. Release builds log nothing.
 - **Fail open:** if rules don't match, allow. Never block messaging by accident.

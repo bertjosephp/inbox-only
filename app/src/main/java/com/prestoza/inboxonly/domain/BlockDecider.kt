@@ -10,10 +10,14 @@ sealed interface Decision {
     /** Leave the user alone. */
     data object Allow : Decision
 
-    /** Leave this screen, trying [actions] in order. [surfaceId] is for logs and counting. */
+    /**
+     * Leave this screen, trying [actions] in order. [surfaceId] is for logs and counting. [pauseMedia]
+     * asks for the system media-pause signal first (see [FollowOnRule.pauseMedia]).
+     */
     data class Block(
         val surfaceId: String,
         val actions: List<BlockAction>,
+        val pauseMedia: Boolean = false,
     ) : Decision
 }
 
@@ -48,7 +52,7 @@ object BlockDecider {
             if (rule.match.matches(signature)) {
                 val movedOn = session.followOn.onPage(signature.itemIdentity, now)
                 if (movedOn && settings.isSurfaceBlocked(app.appId, rule.surfaceId)) {
-                    return Decision.Block(rule.surfaceId, rule.actions)
+                    return Decision.Block(rule.surfaceId, rule.actions, rule.pauseMedia)
                 }
             } else {
                 session.followOn.endVisit()

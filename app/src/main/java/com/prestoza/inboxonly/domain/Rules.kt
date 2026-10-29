@@ -116,6 +116,10 @@ data class ReelViewerRule(
  * @property identityViewId a view whose label differs per item and only appears while an item loads.
  *   Hashed in memory only; never logged or stored.
  * @property resetWindowClasses windows whose opening starts a new visit (e.g. a link opening the app).
+ * @property pauseMedia send the system media-pause signal (like a headphone button) before the block
+ *   screen. YouTube otherwise shrinks a playing video into a floating picture-in-picture player that
+ *   stays on top of the block screen. Only for rules where something is certainly playing, so it can't
+ *   pause another app's music.
  */
 @Serializable
 data class FollowOnRule(
@@ -123,6 +127,7 @@ data class FollowOnRule(
     val surfaceId: String,
     val identityViewId: String,
     val resetWindowClasses: List<String> = emptyList(),
+    val pauseMedia: Boolean = false,
     val actions: List<BlockAction> = listOf(BlockAction.Home),
 )
 
