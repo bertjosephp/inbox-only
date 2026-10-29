@@ -30,7 +30,7 @@ for YouTube's Home and Reddit. Swiping back on that page closes the app, so you 
 the feed. You can switch any app or screen off in the settings.
 
 **Reels from friends:** if someone sends you a Reel in a DM, you can watch that one. Swipe to the next
-Reel and the blocked page offers to take you back to the chat. (You can change this to "Block" if you prefer.)
+Reel and the blocked page appears, with **Open DMs** (or **Open Messenger**) to get back to your messages. (You can change this to "Block" if you prefer.)
 
 ## Not on the Play Store
 

@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "placeholder": false,
   "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
@@ -19,7 +19,10 @@
         "surfaceId": "reels_tab",
         "openedFrom": ["dm_thread"],
         "identityViewId": "com.instagram.android:id/clips_author_username",
-        "actions": [{ "type": "back" }]
+        "actions": [
+          { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
+          { "type": "back" }
+        ]
       },
       "surfaces": [
         {
@@ -89,12 +92,12 @@
         {
           "id": "reels",
           "match": { "selectedContentDescriptions": ["Reels, tab 2 of 5"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
         },
         {
           "id": "reels",
           "match": { "contentDescriptions": ["Reel details"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
         },
         {
           "id": "news_feed",

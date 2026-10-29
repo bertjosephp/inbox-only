@@ -8,8 +8,11 @@ import org.junit.Test
 
 /** The block screen's wording, for the shipped rules (see [FixtureScreens]). */
 class BlockScreenFormatterTest {
-    private fun screenFor(screen: ScreenSignature): BlockScreen {
-        val decision = BlockDecider.decide(screen, FixtureScreens.rules, Settings(), ReelFromChatTracker())
+    private fun screenFor(
+        screen: ScreenSignature,
+        tracker: ReelFromChatTracker = ReelFromChatTracker(),
+    ): BlockScreen {
+        val decision = BlockDecider.decide(screen, FixtureScreens.rules, Settings(), tracker)
         val block = decision as Decision.Block
         val appId = requireNotNull(FixtureScreens.rules.forPackage(screen.packageName)).appId
         return requireNotNull(BlockScreenFormatter.forBlock(appId, block.surfaceId, block.actions))
@@ -31,6 +34,25 @@ class BlockScreenFormatterTest {
         val screen = screenFor(FixtureScreens.fbFeed)
         assertEquals("News feed is blocked", screen.title)
         assertEquals("Open Messenger", screen.primaryLabel)
+    }
+
+    @Test
+    fun `instagram and facebook never offer go back, only their inbox and close`() {
+        val tracker = ReelFromChatTracker()
+        val instagram =
+            listOf(FixtureScreens.igHomeFeed, FixtureScreens.igColdStartFeed, FixtureScreens.igReelsTab) +
+                listOf(FixtureScreens.igExplore, FixtureScreens.igReelViewer(1))
+        instagram.forEach { assertEquals("Open DMs", screenFor(it, tracker).primaryLabel) }
+
+        val facebook =
+            listOf(FixtureScreens.fbFeed, FixtureScreens.fbReelsTab, FixtureScreens.fbReelDetails) +
+                FixtureScreens.fbReelFromMessenger(1)
+        facebook.forEach {
+            val screen = screenFor(it, tracker)
+            assertEquals("Open Messenger", screen.primaryLabel)
+            assertEquals("Close Facebook", screen.closeLabel)
+            assertTrue(screen.showClose)
+        }
     }
 
     @Test

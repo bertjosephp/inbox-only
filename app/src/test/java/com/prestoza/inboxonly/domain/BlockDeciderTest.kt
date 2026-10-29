@@ -89,7 +89,7 @@ class BlockDeciderTest {
         assertEquals(Decision.Allow, decide(FixtureScreens.igReelViewer(1), tracker = tracker))
         assertEquals(Decision.Allow, decide(FixtureScreens.igReelViewer(1, "android.view.View"), tracker = tracker))
         val swiped = decide(FixtureScreens.igReelViewer(2, "android.view.View"), tracker = tracker)
-        assertEquals(Decision.Block("reels_tab", listOf(BlockAction.Back)), swiped)
+        assertEquals(Decision.Block("reels_tab", listOf(toInbox, BlockAction.Back)), swiped)
     }
 
     @Test

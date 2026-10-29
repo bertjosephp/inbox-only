@@ -143,3 +143,12 @@ touched (no ban risk). Opaque, not a translucent dialog, so the feed isn't visib
 it. Its own task stops "close" from revealing Inbox Only's settings, and Back going Home stops the
 page from dropping the user back into the feed it covers. The escalation keeps a safety net if the page
 ever fails to appear.
+
+## ADR-020: Instagram and Facebook blocks always lead to messages
+**Decision:** Every Instagram block screen offers **Open DMs**, and every Facebook one **Open Messenger**,
+plus "Close ‹app›". That includes the Reels tabs and a Reel swiped to from a chat. "Go back" stays only
+for YouTube Shorts. `back` remains in those rules after the main action, but only as the throttle's
+fallback, never as a button. `BlockScreenFormatterTest` pins this.
+**Why:** The owner's call after using it: on these two apps, the useful way out is always the inbox,
+and "Go back" could land on another feed. For a Reel swiped to from a DM this means the inbox rather than
+the exact thread, which is one tap away.

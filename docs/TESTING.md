@@ -38,15 +38,17 @@ block page fades in, names the app and screen, and its buttons work.
 
 **Instagram**
 - [ ] Home feed, also after force-closing Instagram → blocked; **Open DMs** opens the DM inbox.
-- [ ] Reels tab → blocked.
+- [ ] Reels tab → blocked. Every Instagram block offers **Open DMs** and **Close Instagram**, never
+      "Go back".
 - [ ] Explore → blocked. Searching for a user still works.
 - [ ] DM inbox and a DM thread → allowed; you can read and send messages.
 - [ ] Notifications (heart) → allowed.
-- [ ] A Reel from a DM plays; swiping to the next → blocked; **Go back** returns to the chat.
+- [ ] A Reel from a DM plays; swiping to the next → blocked; **Open DMs** opens the DM inbox.
 
 **Facebook**
 - [ ] News feed (opening the app) → blocked; **Open Messenger** opens Messenger.
-- [ ] Reels tab → blocked. A Reel opened from the feed → blocked.
+- [ ] Reels tab → blocked. A Reel opened from the feed → blocked. Every Facebook block offers
+      **Open Messenger** and **Close Facebook**, never "Go back".
 - [ ] The ☰ menu → allowed.
 - [ ] Notifications → allowed.
 - [ ] A Reel from a Messenger chat plays; swiping to the next → blocked; **Open Messenger** returns.
@@ -77,7 +79,7 @@ block page fades in, names the app and screen, and its buttons work.
 
 ## 5. Reel from a chat
 - [ ] Setting "Allow one": a friend's Reel in a DM opens and plays.
-- [ ] Swiping to the next Reel → you're sent back to the chat.
+- [ ] Swiping to the next Reel → blocked; **Open DMs** / **Open Messenger** takes you to your messages.
 - [ ] Setting "Block": the Reel from the DM is blocked too.
 
 ## 6. Schedule, breaks and strict mode
