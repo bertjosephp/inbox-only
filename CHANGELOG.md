@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   strict mode, reboot recovery), with unit tests.
 - Persistence (M2): DataStore-backed `SettingsRepository`, `FocusStateStore` and `CounterStore`
   (daily count resets at local midnight on read), `AppContainer` for manual dependency injection.
+- Quick Settings tile (M3): tap toggles Focus for the configured duration with an exact auto-off alarm;
+  subtitle shows `1h 12m left`, `Until 6:00 PM`, `Break · 4m` or `14 blocked`; long-press opens settings.
+  `FocusCoordinator` applies every state change and keeps the single alarm in sync.
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
