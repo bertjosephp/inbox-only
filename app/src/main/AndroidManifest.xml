@@ -20,6 +20,18 @@
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         android:maxSdkVersion="32" />
 
+    <!--
+        Package visibility (Android 11+): apps can only "see" other apps they declare here. We need it to
+        open Messenger or a deep link as a block action. This grants no access to their data.
+    -->
+    <queries>
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.orca" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.reddit.frontpage" />
+    </queries>
+
     <application
         android:name=".InboxOnlyApp"
         android:allowBackup="false"

@@ -1,24 +1,36 @@
-// BlockerAccessibilityService: the app's eyes. An AccessibilityService is a system-bound component
-// (normally used by screen readers) that receives events when other apps' screens change and can read
-// their view hierarchy and perform global actions like Back. We use it only to notice which screen is
-// showing in four target apps. It stays thin: it observes, and later asks pure domain code what to do.
+// BlockerAccessibilityService: the app's eyes and hands. An AccessibilityService is a system-bound
+// component (normally used by screen readers) that receives events when other apps' screens change, can
+// look up views on screen, and can perform global actions like Back and Home. It stays thin: it builds a
+// ScreenSignature, asks the pure BlockDecider, and carries out the answer.
 package com.prestoza.inboxonly.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
+import androidx.core.net.toUri
 import com.prestoza.inboxonly.appContainer
 import com.prestoza.inboxonly.debug.InspectorLogger
+import com.prestoza.inboxonly.domain.BlockAction
+import com.prestoza.inboxonly.domain.BlockDecider
+import com.prestoza.inboxonly.domain.BlockPlan
+import com.prestoza.inboxonly.domain.BlockThrottle
+import com.prestoza.inboxonly.domain.Decision
+import com.prestoza.inboxonly.domain.FocusController
+import com.prestoza.inboxonly.domain.FocusState
+import com.prestoza.inboxonly.domain.ReelFromChatTracker
+import com.prestoza.inboxonly.domain.Settings
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
- * Watches the four target apps while Focus is on.
+ * Blocks doomscroll surfaces in the four target apps while Focus is on.
  *
  * Battery: the XML config limits events to four packages and two event types; when Focus is off we
  * clear the event types so the system delivers nothing at all. Content-change events are throttled.
@@ -27,9 +39,15 @@ class BlockerAccessibilityService : AccessibilityService() {
     private var scope: CoroutineScope? = null
     private val handler = Handler(Looper.getMainLooper())
 
+    // Latest values from the stores, cached so each screen check is synchronous and cheap.
+    private var storedState: FocusState = FocusState.Off
+    private var settings = Settings()
+
     // Content-changed events don't say which activity is showing; remember it from the last
     // window-state event per package.
     private val windowClassByPackage = mutableMapOf<String, String>()
+    private val reelTrackers = mutableMapOf<String, ReelFromChatTracker>()
+    private val throttle = BlockThrottle()
 
     private var pendingPackage: String? = null
     private val pendingCheck = Runnable { pendingPackage?.let(::onScreenMaybeChanged) }
@@ -37,13 +55,18 @@ class BlockerAccessibilityService : AccessibilityService() {
     /** Called when the system binds the service (user enabled it, boot, or after the OS restarted it). */
     override fun onServiceConnected() {
         super.onServiceConnected()
+        val container = appContainer
         val newScope = MainScope()
         scope = newScope
+        // Parse rules.json off the main thread so the first screen check doesn't pay for it.
+        newScope.launch(Dispatchers.IO) { container.rulesRepository.rules }
         newScope.launch {
-            appContainer.focusStateStore.state
-                .map { it.isBlocking }
-                .distinctUntilChanged()
-                .collect { blocking -> setListening(blocking || InspectorLogger.ENABLED) }
+            combine(container.focusStateStore.state, container.settingsRepository.settings, ::Pair)
+                .collect { (state, latestSettings) ->
+                    storedState = state
+                    settings = latestSettings
+                    setListening(state.isBlocking || InspectorLogger.ENABLED)
+                }
         }
     }
 
@@ -87,11 +110,85 @@ class BlockerAccessibilityService : AccessibilityService() {
         try {
             // The active window can belong to another app (e.g. a system dialog); ignore those.
             if (root.packageName?.toString() != packageName) return
-            InspectorLogger.logScreen(root, packageName, windowClassByPackage[packageName])
+            val windowClass = windowClassByPackage[packageName]
+            InspectorLogger.logScreen(root, packageName, windowClass)
+            if (!isFocusBlocking()) return
+
+            val rules = appContainer.rulesRepository.rules
+            val app = rules.forPackage(packageName)
+            if (rules.placeholder || app == null) return
+            val signature = ScreenSignatureReader.read(root, packageName, windowClass, app)
+            val tracker = reelTrackers.getOrPut(packageName) { ReelFromChatTracker() }
+            val decision = BlockDecider.decide(signature, rules, settings, tracker)
+            InspectorLogger.logDecision(signature, decision)
+            if (decision is Decision.Block) block(packageName, decision)
         } finally {
             root.recycleCompat()
         }
     }
+
+    // The stored state can be stale if an alarm is late, so resolve it against the clock every time.
+    private fun isFocusBlocking(): Boolean {
+        val time = appContainer.timeSource
+        return FocusController.reconcile(storedState, settings, time.now(), time.zone()).isBlocking
+    }
+
+    private fun block(
+        packageName: String,
+        decision: Decision.Block,
+    ) {
+        val now = appContainer.timeSource.now()
+        when (val plan = throttle.plan(packageName, decision, now)) {
+            is BlockPlan.Cooldown -> {
+                // Cooldown so we never trap the user in a back-button loop. Look again once it's over, in
+                // case the screen is static and sends no more events.
+                pendingPackage = packageName
+                handler.removeCallbacks(pendingCheck)
+                handler.postDelayed(pendingCheck, plan.retryAfter.toMillis() + COOLDOWN_RECHECK_SLACK_MS)
+            }
+
+            is BlockPlan.Execute -> {
+                val performed = plan.actions.firstOrNull(::perform) ?: return
+                throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+                // One count per block event, not per accessibility event.
+                appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
+            }
+        }
+    }
+
+    /** Carries out one action. Returns false if it couldn't (e.g. a deep link no longer resolves). */
+    private fun perform(action: BlockAction): Boolean =
+        when (action) {
+            BlockAction.Back -> {
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+
+            BlockAction.Home -> {
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+
+            is BlockAction.Redirect -> {
+                val intent = Intent(Intent.ACTION_VIEW, action.uri.toUri())
+                action.packageName?.let(intent::setPackage)
+                startSafely(intent)
+            }
+
+            is BlockAction.Launch -> {
+                packageManager.getLaunchIntentForPackage(action.packageName)?.let(::startSafely) ?: false
+            }
+        }
+
+    // Accessibility services may start activities from the background: the system binds them, which
+    // exempts them from Android's background-activity-launch restrictions.
+    private fun startSafely(intent: Intent): Boolean =
+        try {
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
 
     /**
      * Turns event delivery on or off at runtime.
@@ -101,7 +198,9 @@ class BlockerAccessibilityService : AccessibilityService() {
      */
     private fun setListening(listening: Boolean) {
         val info = serviceInfo ?: return
-        info.eventTypes = if (listening) LISTENED_EVENT_TYPES else 0
+        val eventTypes = if (listening) LISTENED_EVENT_TYPES else 0
+        if (info.eventTypes == eventTypes) return
+        info.eventTypes = eventTypes
         serviceInfo = info
         if (!listening) {
             handler.removeCallbacks(pendingCheck)
@@ -111,6 +210,7 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private companion object {
         const val CONTENT_THROTTLE_MS = 250L
+        const val COOLDOWN_RECHECK_SLACK_MS = 50L
         const val LISTENED_EVENT_TYPES =
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     }
