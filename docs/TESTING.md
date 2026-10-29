@@ -55,8 +55,11 @@ block page fades in, names the app and screen, and its buttons work.
 
 **YouTube**
 - [ ] Home (opening the app) → blocked; **Close YouTube** closes it.
-- [ ] Shorts → blocked; **Go back** leaves Shorts.
-- [ ] A video opened from a link or share → plays.
+- [ ] Shorts → blocked; **Close YouTube** closes it.
+- [ ] A video opened from a link or share → plays. Scrolling down through the list and back is fine.
+- [ ] Tapping a related video below it → blocked (**Close YouTube**). So is autoplay moving to the next video.
+- [ ] With YouTube in the background, a second link → plays.
+- [ ] Search → open a result → plays; a related video from it → blocked; back to Search → another result plays.
 - [ ] Search and Subscriptions → allowed when reachable (note: Home closes the app, so they're reached via links).
 
 **Reddit**

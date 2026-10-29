@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "placeholder": false,
   "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
@@ -119,11 +119,18 @@
         },
         { "id": "subscriptions", "match": { "selectedContentDescriptions": ["Subscriptions"] } }
       ],
+      "followOn": {
+        "match": { "anyViewIds": ["com.google.android.youtube:id/watch_panel"] },
+        "surfaceId": "next_videos",
+        "identityViewId": "com.google.android.youtube:id/title",
+        "resetWindowClasses": ["com.google.android.apps.youtube.app.watchwhile.MainActivity"],
+        "actions": [{ "type": "home" }]
+      },
       "surfaces": [
         {
           "id": "shorts",
           "match": { "anyViewIds": ["com.google.android.youtube:id/reel_recycler"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "home" }]
         },
         {
           "id": "home_feed",

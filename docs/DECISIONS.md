@@ -152,3 +152,19 @@ fallback, never as a button. `BlockScreenFormatterTest` pins this.
 **Why:** The owner's call after using it: on these two apps, the useful way out is always the inbox,
 and "Go back" could land on another feed. For a Reel swiped to from a DM this means the inbox rather than
 the exact thread, which is one tap away.
+
+## ADR-021: One YouTube video per visit
+**Decision:** YouTube's watch page stays allowed, but a `followOn` rule blocks moving on to a different
+video while staying on it ("Next videos" in settings, on by default). A visit starts on the first watch
+page after any other screen, or when YouTube's `MainActivity` window opens (a link while YouTube is in
+the background). The video's identity is a hash of the collapsed `title` view, kept in memory only.
+YouTube shows that view only while a video loads, and not for a video opened from a link, so a visit
+may start without an identity; a title seen within 2 s of the start still counts as the first video.
+Shorts became close-only, so every YouTube block offers **Close YouTube** alone.
+**Why:** On device, a linked video's "up next" list made the watch page a feed. The capture
+(`capture-5.txt`) showed the `title` view appears exactly once per newly loaded video (after a link,
+search result or related tap), never while scrolling, and that the title-like first item of the list is
+replaced by related cards as you scroll, so that can't be the identity. Known limit: a link opened while
+YouTube is closed doesn't fire the reset window; it still works because a linked video shows no title,
+but if YouTube ever starts showing one, that first video could be blocked. Closing the block screen and
+reopening YouTube on the blocked video starts a new visit; that takes deliberate effort, so it's accepted.

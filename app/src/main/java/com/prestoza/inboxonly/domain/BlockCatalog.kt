@@ -46,6 +46,7 @@ object BlockCatalog {
                     listOf(
                         Surface("shorts", "Shorts"),
                         Surface("home_feed", "Home feed"),
+                        Surface("next_videos", "Next videos"),
                     ),
             ),
             TargetApp(

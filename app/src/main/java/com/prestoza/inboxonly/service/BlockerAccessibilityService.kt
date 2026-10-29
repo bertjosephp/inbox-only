@@ -13,6 +13,7 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.net.toUri
 import com.prestoza.inboxonly.appContainer
 import com.prestoza.inboxonly.debug.InspectorLogger
+import com.prestoza.inboxonly.domain.AppSession
 import com.prestoza.inboxonly.domain.BlockAction
 import com.prestoza.inboxonly.domain.BlockDecider
 import com.prestoza.inboxonly.domain.BlockPlan
@@ -20,7 +21,6 @@ import com.prestoza.inboxonly.domain.BlockThrottle
 import com.prestoza.inboxonly.domain.Decision
 import com.prestoza.inboxonly.domain.FocusController
 import com.prestoza.inboxonly.domain.FocusState
-import com.prestoza.inboxonly.domain.ReelFromChatTracker
 import com.prestoza.inboxonly.domain.Settings
 import com.prestoza.inboxonly.ui.BlockScreenActivity
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +47,7 @@ class BlockerAccessibilityService : AccessibilityService() {
     // Content-changed events don't say which activity is showing; remember it from the last
     // window-state event per package.
     private val windowClassByPackage = mutableMapOf<String, String>()
-    private val reelTrackers = mutableMapOf<String, ReelFromChatTracker>()
+    private val sessions = mutableMapOf<String, AppSession>()
     private val throttle = BlockThrottle()
 
     private var pendingPackage: String? = null
@@ -86,7 +86,7 @@ class BlockerAccessibilityService : AccessibilityService() {
                         packageName,
                         windowClass,
                         appContainer.rulesRepository.rules,
-                        reelTrackers.getOrPut(packageName) { ReelFromChatTracker() },
+                        session(packageName),
                     )
                 }
                 handler.removeCallbacks(pendingCheck)
@@ -132,14 +132,16 @@ class BlockerAccessibilityService : AccessibilityService() {
             val app = rules.forPackage(packageName)
             if (rules.placeholder || app == null) return
             val signature = ScreenSignatureReader.read(root, packageName, windowClass, app)
-            val tracker = reelTrackers.getOrPut(packageName) { ReelFromChatTracker() }
-            val decision = BlockDecider.decide(signature, rules, settings, tracker)
+            val now = appContainer.timeSource.now()
+            val decision = BlockDecider.decide(signature, rules, settings, session(packageName), now)
             InspectorLogger.logDecision(signature, decision)
             if (decision is Decision.Block) block(packageName, app.appId, decision)
         } finally {
             root.recycleCompat()
         }
     }
+
+    private fun session(packageName: String): AppSession = sessions.getOrPut(packageName) { AppSession() }
 
     // The stored state can be stale if an alarm is late, so resolve it against the clock every time.
     private fun isFocusBlocking(): Boolean {

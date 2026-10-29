@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- YouTube: one video per visit. A video opened from a link, Search or Subscriptions plays; moving on to
+  another from the list below it (or autoplay) is blocked. New "Next videos" toggle. Shorts now only
+  offers Close YouTube.
 - Block screen: blocked surfaces now fade into a calm page that names the app and screen, with one
   button out (Open DMs, Open Messenger, Go back or Close ‹app›) instead of leaving instantly.
 - Domain core (M1): `Settings`, `BlockCatalog`, `FocusState`, `ScheduleCalculator` (midnight-crossing

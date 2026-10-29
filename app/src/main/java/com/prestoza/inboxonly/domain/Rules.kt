@@ -31,6 +31,7 @@ data class Rules(
  * @property allowed screens that are always allowed (DMs, threads). Checked first; they win over everything.
  * @property surfaces blockable screens, checked in order; the first match decides.
  * @property reelViewer optional "Reel opened from a chat" handling (see [ReelFromChatTracker]).
+ * @property followOn optional "one item per visit" handling for an allowed page (see [FollowOnTracker]).
  */
 @Serializable
 data class AppRules(
@@ -39,21 +40,25 @@ data class AppRules(
     val allowed: List<ScreenRule> = emptyList(),
     val surfaces: List<SurfaceRule> = emptyList(),
     val reelViewer: ReelViewerRule? = null,
+    val followOn: FollowOnRule? = null,
 ) {
     /** Every view ID any rule for this app mentions: the only IDs the service ever looks up. */
     val referencedViewIds: Set<String> by lazy {
-        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match))
+        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match, followOn?.match))
             .flatMap { it.referencedViewIds }
-            .plus(listOfNotNull(reelViewer?.identityViewId))
+            .plus(listOfNotNull(reelViewer?.identityViewId, followOn?.identityViewId))
             .toSet()
     }
 
+    /** The view whose label identifies the current Reel or video, if the rules name one. */
+    val itemIdentityViewId: String? get() = reelViewer?.identityViewId ?: followOn?.identityViewId
+
     /** Compiled [ReelViewerRule.identityDescriptionPattern], if any. */
-    val reelIdentityDescriptionRegex: Regex? by lazy { reelViewer?.identityDescriptionPattern?.let(::Regex) }
+    val itemIdentityDescriptionRegex: Regex? by lazy { reelViewer?.identityDescriptionPattern?.let(::Regex) }
 
     /** Every content description any rule for this app mentions. */
     val referencedContentDescriptions: Set<String> by lazy {
-        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match))
+        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match, followOn?.match))
             .flatMap { it.contentDescriptions + it.selectedContentDescriptions }
             .toSet()
     }
@@ -98,6 +103,27 @@ data class ReelViewerRule(
     val identityViewId: String? = null,
     val identityDescriptionPattern: String? = null,
     val actions: List<BlockAction> = listOf(BlockAction.Back),
+)
+
+/**
+ * An allowed page where the first item is fine but moving on to another isn't: YouTube's watch page,
+ * where a linked video may play but its "up next" videos may not.
+ *
+ * A visit starts on the first screen matching [match] (after any other screen, or a window in
+ * [resetWindowClasses] opening). The first item's identity is remembered; a different one while the
+ * visit lasts is blocked as [surfaceId].
+ *
+ * @property identityViewId a view whose label differs per item and only appears while an item loads.
+ *   Hashed in memory only; never logged or stored.
+ * @property resetWindowClasses windows whose opening starts a new visit (e.g. a link opening the app).
+ */
+@Serializable
+data class FollowOnRule(
+    val match: Match,
+    val surfaceId: String,
+    val identityViewId: String,
+    val resetWindowClasses: List<String> = emptyList(),
+    val actions: List<BlockAction> = listOf(BlockAction.Home),
 )
 
 /**

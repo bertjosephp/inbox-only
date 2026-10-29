@@ -30,6 +30,13 @@ object RulesValidator {
                     if (surface.match.isEmpty) add("${app.appId}/${surface.id}: empty match")
                     if (surface.actions.isEmpty()) add("${app.appId}/${surface.id}: no actions")
                 }
+                app.followOn?.let { rule ->
+                    val prefix = "${app.appId}/followOn"
+                    if (rule.surfaceId !in surfaceIds) add("$prefix: unknown surface id ${rule.surfaceId}")
+                    if (rule.match.isEmpty) add("$prefix: empty match")
+                    if (rule.identityViewId.isBlank()) add("$prefix: empty identityViewId")
+                    if (rule.actions.isEmpty()) add("$prefix: no actions")
+                }
                 app.reelViewer?.let { viewer ->
                     val prefix = "${app.appId}/reelViewer"
                     if (viewer.surfaceId !in surfaceIds) add("$prefix: unknown surface id ${viewer.surfaceId}")

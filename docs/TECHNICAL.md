@@ -22,10 +22,14 @@ accessibility event → ScreenSignature → BlockDecider → BlockThrottle → b
 3. **Decision.** The pure `BlockDecider.decide(signature, rules, settings, tracker)` returns `Allow` or
    `Block(surfaceId, actions)`:
    1. No rules for the package, or placeholder rules → Allow.
-   2. Any `allowed` screen matches (DM inbox, chat thread, Reddit thread…) → Allow. Allowed screens win.
-   3. The Reel viewer matches → `ReelFromChatTracker` decides (allow one Reel opened from a chat).
-   4. The first matching `surface` → Block if the user has it on, else Allow.
-   5. Nothing matched → Allow (**fail open**).
+   2. A `followOn` page shows a different item than its visit's first (another YouTube video) →
+      `FollowOnTracker` blocks it. The one exception to "allowed screens win" (ADR-021).
+   3. Any `allowed` screen matches (DM inbox, chat thread, Reddit thread…) → Allow.
+   4. The Reel viewer matches → `ReelFromChatTracker` decides (allow one Reel opened from a chat).
+   5. The first matching `surface` → Block if the user has it on, else Allow.
+   6. Nothing matched → Allow (**fail open**).
+
+   Both trackers live in a per-app `AppSession`, in memory only.
 4. **Throttle.** `BlockThrottle` enforces a 700 ms per-app cooldown. Within the cooldown it asks for a
    recheck when the cooldown ends. If the *same* surface reappears within 2 s of an action, it escalates
    to the next action (`redirect → back → home`). Home is always appended as the last resort.
@@ -132,6 +136,13 @@ fields are ignored, so newer files still load in older builds.
       "identityViewId": "…",    // optional: node whose label differs per Reel (hashed in memory)
       "identityDescriptionPattern": "…", // optional: same, as a regex over content descriptions
       "actions": [{ "type": "back" }]
+    },
+    "followOn": {               // optional: "one item per visit" on an allowed page (YouTube's watch page)
+      "match": { … },
+      "surfaceId": "next_videos",
+      "identityViewId": "…",    // label that differs per item, seen while it loads (hashed in memory)
+      "resetWindowClasses": ["…"], // windows whose opening starts a new visit (a link opening the app)
+      "actions": [{ "type": "home" }]
     },
     "surfaces": [               // blockable; first match wins
       {

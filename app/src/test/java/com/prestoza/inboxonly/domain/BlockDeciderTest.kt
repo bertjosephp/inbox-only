@@ -4,6 +4,7 @@ import com.prestoza.inboxonly.domain.FixtureScreens.IG
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 /** Runs the shipped rules.json against real captured screen signatures (see [FixtureScreens]). */
 class BlockDeciderTest {
@@ -15,7 +16,13 @@ class BlockDeciderTest {
         settings: Settings = defaults,
         tracker: ReelFromChatTracker = ReelFromChatTracker(),
         rules: Rules = this.rules,
-    ) = BlockDecider.decide(screen, rules, settings, tracker)
+        session: AppSession = AppSession(reels = tracker),
+        now: Instant = t0,
+    ) = BlockDecider.decide(screen, rules, settings, session, now)
+
+    private val t0 = Instant.parse("2026-10-29T12:00:00Z")
+
+    private fun seconds(s: Long): Instant = t0.plusSeconds(s)
 
     private fun assertBlocked(
         surfaceId: String,
@@ -132,7 +139,7 @@ class BlockDeciderTest {
     }
 
     private fun openFromMessenger(tracker: ReelFromChatTracker) =
-        BlockDecider.onWindowOpened(FixtureScreens.FB, FixtureScreens.FB_IMMERSIVE, rules, tracker)
+        BlockDecider.onWindowOpened(FixtureScreens.FB, FixtureScreens.FB_IMMERSIVE, rules, AppSession(reels = tracker))
 
     private val toMessenger = listOf(BlockAction.Launch("com.facebook.orca", "Open Messenger"), BlockAction.Back)
 
@@ -172,9 +179,75 @@ class BlockDeciderTest {
     // ---- YouTube ----
 
     @Test
-    fun `youtube blocks shorts and closes home`() {
-        assertBlocked("shorts", FixtureScreens.ytShorts)
+    fun `youtube closes shorts and home`() {
+        assertEquals(Decision.Block("shorts", listOf(BlockAction.Home)), decide(FixtureScreens.ytShorts))
         assertEquals(Decision.Block("home_feed", listOf(BlockAction.Home)), decide(FixtureScreens.ytHome))
+    }
+
+    // ---- YouTube: one video per visit ----
+
+    private val nextVideo = Decision.Block("next_videos", listOf(BlockAction.Home))
+
+    private fun ytDecide(
+        screen: ScreenSignature,
+        session: AppSession,
+        at: Instant,
+        settings: Settings = defaults,
+    ) = decide(screen, settings = settings, session = session, now = at)
+
+    private fun openLink(session: AppSession) =
+        BlockDecider.onWindowOpened(FixtureScreens.YT, FixtureScreens.YT_MAIN_ACTIVITY, rules, session)
+
+    @Test
+    fun `a linked video plays, scrolling is fine, a related video is blocked`() {
+        val session = AppSession()
+        openLink(session)
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchPage(), session, t0))
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchPage(), session, seconds(20)))
+        assertEquals(nextVideo, ytDecide(FixtureScreens.ytWatchLoading(2), session, seconds(30)))
+    }
+
+    @Test
+    fun `a video picked from search plays, then a related one is blocked`() {
+        val session = AppSession()
+        ytDecide(FixtureScreens.ytSearch, session, t0)
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(1), session, seconds(1)))
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchPage(), session, seconds(5)))
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(1), session, seconds(6)))
+        assertEquals(nextVideo, ytDecide(FixtureScreens.ytWatchLoading(3), session, seconds(60)))
+    }
+
+    @Test
+    fun `back to search and another result starts a new visit`() {
+        val session = AppSession()
+        ytDecide(FixtureScreens.ytWatchLoading(1), session, t0)
+        ytDecide(FixtureScreens.ytSearch, session, seconds(30))
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(2), session, seconds(31)))
+    }
+
+    @Test
+    fun `a title that shows up just after the page opens belongs to the first video`() {
+        val session = AppSession()
+        ytDecide(FixtureScreens.ytWatchPage(), session, t0)
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(1), session, seconds(1)))
+        assertEquals(nextVideo, ytDecide(FixtureScreens.ytWatchLoading(2), session, seconds(40)))
+    }
+
+    @Test
+    fun `a second link while youtube is in the background plays`() {
+        val session = AppSession()
+        ytDecide(FixtureScreens.ytWatchLoading(1), session, t0)
+        openLink(session)
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchPage(), session, seconds(300)))
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(5), session, seconds(301)))
+    }
+
+    @Test
+    fun `next videos switched off in settings are allowed`() {
+        val settings = defaults.copy(apps = mapOf("youtube" to AppBlocking(disabledSurfaces = setOf("next_videos"))))
+        val session = AppSession()
+        ytDecide(FixtureScreens.ytWatchLoading(1), session, t0, settings)
+        assertEquals(Decision.Allow, ytDecide(FixtureScreens.ytWatchLoading(2), session, seconds(60), settings))
     }
 
     @Test

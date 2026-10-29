@@ -19,15 +19,19 @@ something that blocks only the scroll.
 |---|---|---|
 | Instagram | Reels tab, Explore, Home feed | DMs and inbox, notifications, a Reel a friend sent you in a chat |
 | Facebook | Reels, News feed | Notifications |
-| YouTube | Shorts, Home feed | Search, Subscriptions, any video you open directly |
+| YouTube | Shorts, Home feed, the next video after the one you opened | Search, Subscriptions, one video you open from a link or a search |
 | Reddit | Feeds, Popular, subreddits, search results, the video feed | A single thread, e.g. one you opened from a Google result |
 
 **Messenger is never touched.** Inbox Only doesn't even look at it.
 
 When you land on a blocked screen, a calm "blocked" page fades in on top of it, with one button
-out: **Open DMs** for Instagram, **Open Messenger** for Facebook, **Go back** for Shorts, and **Close**
-for YouTube's Home and Reddit. Swiping back on that page closes the app, so you never land back in
+out: **Open DMs** for Instagram, **Open Messenger** for Facebook, and **Close** for YouTube and
+Reddit. Swiping back on that page closes the app, so you never land back in
 the feed. You can switch any app or screen off in the settings.
+
+**One YouTube video at a time:** a video you open from a link, Search or Subscriptions plays. Picking
+another one from the list underneath it (or autoplay moving on) brings up the blocked page. Go back to
+Search to pick something else.
 
 **Reels from friends:** if someone sends you a Reel in a DM, you can watch that one. Swipe to the next
 Reel and the blocked page appears, with **Open DMs** (or **Open Messenger**) to get back to your messages. (You can change this to "Block" if you prefer.)

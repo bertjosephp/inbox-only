@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 /** The block screen's wording, for the shipped rules (see [FixtureScreens]). */
 class BlockScreenFormatterTest {
@@ -12,7 +13,8 @@ class BlockScreenFormatterTest {
         screen: ScreenSignature,
         tracker: ReelFromChatTracker = ReelFromChatTracker(),
     ): BlockScreen {
-        val decision = BlockDecider.decide(screen, FixtureScreens.rules, Settings(), tracker)
+        val now = Instant.parse("2026-10-29T12:00:00Z")
+        val decision = BlockDecider.decide(screen, FixtureScreens.rules, Settings(), AppSession(reels = tracker), now)
         val block = decision as Decision.Block
         val appId = requireNotNull(FixtureScreens.rules.forPackage(screen.packageName)).appId
         return requireNotNull(BlockScreenFormatter.forBlock(appId, block.surfaceId, block.actions))
@@ -56,11 +58,11 @@ class BlockScreenFormatterTest {
     }
 
     @Test
-    fun `shorts offers going back`() {
+    fun `shorts only offers closing youtube`() {
         val screen = screenFor(FixtureScreens.ytShorts)
         assertEquals("Shorts is blocked", screen.title)
-        assertEquals("Go back", screen.primaryLabel)
-        assertTrue(screen.showClose)
+        assertEquals("Close YouTube", screen.primaryLabel)
+        assertFalse(screen.showClose)
     }
 
     @Test
