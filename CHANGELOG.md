@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain core (M1): `Settings`, `BlockCatalog`, `FocusState`, `ScheduleCalculator` (midnight-crossing
   windows, DST and time zone safe) and `FocusController` (tile taps, timers, schedule edges, breaks,
   strict mode, reboot recovery), with unit tests.
+- Persistence (M2): DataStore-backed `SettingsRepository`, `FocusStateStore` and `CounterStore`
+  (daily count resets at local midnight on read), `AppContainer` for manual dependency injection.
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
