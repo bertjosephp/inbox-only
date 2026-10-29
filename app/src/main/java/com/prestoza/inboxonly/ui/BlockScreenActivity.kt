@@ -2,12 +2,15 @@
 // user straight out. It's our own screen, opened with an intent: nothing in the blocked app is touched.
 // The main button takes the way out the rules prefer (DMs, Messenger, back, or closing the app).
 //
-// Entrance: fade + zoom, passed by the service when it opens the page (see blockScreenAnimation there).
+// Animation: One UI replaces window animations for a new task with its own slide, whatever the theme or
+// launch options say. So the page opens with no window animation in a transparent window and draws its
+// own fade + zoom. Once it's fully shown, the window turns opaque so the app underneath stops (and its
+// video goes quiet); before leaving it turns transparent again and fades out the same way.
+//
 // It runs in its own task, hidden from Recents, so finishing it reveals the app underneath rather than
 // Inbox Only's settings. Back (button or gesture) never returns to the blocked feed: it closes the app.
 package com.prestoza.inboxonly.ui
 
-import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -18,12 +21,14 @@ import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,12 +50,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -69,6 +76,9 @@ import kotlinx.serialization.json.Json
 class BlockScreenActivity : ComponentActivity() {
     private var request by mutableStateOf<Request?>(null)
 
+    // Set once a button (or Back) is pressed: the page fades out, then this runs.
+    private var pendingExit by mutableStateOf<(() -> Unit)?>(null)
+
     private data class Request(
         val packageName: String,
         val surfaceId: String,
@@ -80,13 +90,22 @@ class BlockScreenActivity : ComponentActivity() {
         enableEdgeToEdge()
         request = readRequest(intent) ?: return finishAndRemoveTask()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Fade + shrink on the way out (the "Go back" path, where nothing else opens).
-            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, R.anim.block_screen_exit)
+            // The page has already faded itself out by the time it finishes.
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
         }
-        onBackPressedDispatcher.addCallback(this) { closeBlockedApp() }
+        onBackPressedDispatcher.addCallback(this) { leave(::closeBlockedApp) }
         setContent {
             InboxOnlyTheme {
-                request?.let { BlockScreenContent(it.screen, onPrimary = ::onPrimary, onClose = ::closeBlockedApp) }
+                request?.let { current ->
+                    BlockScreenPage(
+                        screen = current.screen,
+                        exiting = pendingExit != null,
+                        onShown = { setOpaque(true) },
+                        onHidden = ::finishExit,
+                        onPrimary = { leave(::onPrimary) },
+                        onClose = { leave(::closeBlockedApp) },
+                    )
+                }
             }
         }
     }
@@ -97,24 +116,44 @@ class BlockScreenActivity : ComponentActivity() {
         readRequest(intent)?.let { request = it }
     }
 
+    // Starts the fade-out; [then] runs once the page is invisible.
+    private fun leave(then: () -> Unit) {
+        if (pendingExit != null) return
+        setOpaque(false)
+        pendingExit = then
+    }
+
+    private fun finishExit() {
+        pendingExit?.invoke()
+        finishAndRemoveTask()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            @Suppress("DEPRECATION") // The replacement, overrideActivityTransition, needs Android 14.
+            overridePendingTransition(0, 0)
+        }
+    }
+
+    // Opaque: Android stops the app underneath, so its video stops. Needs Android 11; on Android 10
+    // the window just stays transparent behind the opaque page.
+    private fun setOpaque(opaque: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) setTranslucent(!opaque)
+    }
+
     private fun onPrimary() {
         val current = request ?: return
         when (val action = current.screen.primaryAction) {
             is BlockAction.Redirect -> {
                 val intent = Intent(Intent.ACTION_VIEW, action.uri.toUri())
                 action.packageName?.let(intent::setPackage)
-                leaveTo(intent)
+                open(intent)
             }
 
             is BlockAction.Launch -> {
-                leaveTo(packageManager.getLaunchIntentForPackage(action.packageName))
+                open(packageManager.getLaunchIntentForPackage(action.packageName))
             }
 
             BlockAction.Back -> {
                 // Only the accessibility service can press Back in another app; it waits for us to close.
-                if (appContainer.blockScreenBridge.requestBack(current.packageName, current.surfaceId)) {
-                    finishAndRemoveTask()
-                } else {
+                if (!appContainer.blockScreenBridge.requestBack(current.packageName, current.surfaceId)) {
                     closeBlockedApp()
                 }
             }
@@ -127,22 +166,17 @@ class BlockScreenActivity : ComponentActivity() {
 
     // Like pressing Home: the blocked app goes to the background.
     private fun closeBlockedApp() {
-        leaveTo(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
     }
 
-    // Opens [target] (falling back to the home screen if it can't), then removes this screen.
-    private fun leaveTo(target: Intent?) {
-        val opened = target != null && start(target)
-        if (!opened) start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
-        finishAndRemoveTask()
+    // Opens [target], falling back to the home screen if it can't.
+    private fun open(target: Intent?) {
+        if (target == null || !start(target)) closeBlockedApp()
     }
 
-    // Whatever opens next (DMs, Messenger, the home screen) fades in while this page fades out.
     private fun start(intent: Intent): Boolean =
         try {
-            val crossFade =
-                ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, R.anim.block_screen_exit)
-            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), crossFade.toBundle())
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         } catch (_: ActivityNotFoundException) {
             false
@@ -183,61 +217,94 @@ class BlockScreenActivity : ComponentActivity() {
     }
 }
 
-/** The page itself: fades in, then the content settles upward with a soft spring. */
+/**
+ * The page itself. The whole page fades in while growing from 92% to full size, and the content then
+ * settles upward with a soft spring. [exiting] reverses the fade + zoom; [onHidden] fires at the end.
+ */
+@Composable
+private fun BlockScreenPage(
+    screen: BlockScreen,
+    exiting: Boolean,
+    onShown: () -> Unit,
+    onHidden: () -> Unit,
+    onPrimary: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, tween(durationMillis = 250, easing = LinearOutSlowInEasing))
+        onShown()
+    }
+    LaunchedEffect(exiting) {
+        if (exiting) {
+            progress.animateTo(0f, tween(durationMillis = 200, easing = FastOutLinearInEasing))
+            onHidden()
+        }
+    }
+    Box(
+        Modifier.fillMaxSize().graphicsLayer {
+            alpha = progress.value
+            scaleX = 0.92f + 0.08f * progress.value
+            scaleY = scaleX
+        },
+    ) {
+        Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
+            BlockScreenContent(screen, onPrimary, onClose)
+        }
+    }
+}
+
 @Composable
 private fun BlockScreenContent(
     screen: BlockScreen,
     onPrimary: () -> Unit,
     onClose: () -> Unit,
 ) {
-    // Starts hidden and targets visible, so the entrance plays once when the screen first appears.
+    // Starts hidden and targets visible, so the content's spring plays once when the page first appears.
     val visible = remember { MutableTransitionState(false).apply { targetState = true } }
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.safeDrawingPadding().padding(24.dp)) {
-            AnimatedVisibility(
-                visibleState = visible,
-                enter =
-                    fadeIn(tween(durationMillis = 280)) +
-                        scaleIn(spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow), initialScale = 0.94f) +
-                        slideInVertically(spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow)) { it / 10 },
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.safeDrawingPadding().padding(24.dp)) {
+        AnimatedVisibility(
+            visibleState = visible,
+            enter =
+                fadeIn(tween(durationMillis = 300)) +
+                    slideInVertically(spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow)) { it / 12 },
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.widthIn(max = 420.dp),
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.widthIn(max = 420.dp),
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier
+                            .size(80.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier =
-                            Modifier
-                                .size(80.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.ic_tile_focus),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(40.dp),
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        screen.appLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                    Icon(
+                        painterResource(R.drawable.ic_tile_focus),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(40.dp),
                     )
-                    Text(screen.title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                    Text(
-                        "Focus is on. Your chats and DMs still work.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = onPrimary, modifier = Modifier.fillMaxWidth()) { Text(screen.primaryLabel) }
-                    if (screen.showClose) {
-                        TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(screen.closeLabel) }
-                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    screen.appLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(screen.title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                Text(
+                    "Focus is on. Your chats and DMs still work.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = onPrimary, modifier = Modifier.fillMaxWidth()) { Text(screen.primaryLabel) }
+                if (screen.showClose) {
+                    TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(screen.closeLabel) }
                 }
             }
         }

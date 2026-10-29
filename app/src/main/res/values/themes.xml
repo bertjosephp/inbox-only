@@ -10,18 +10,12 @@
     </style>
 
     <!--
-        The block screen fades and zooms instead of the usual slide, so it feels like a pause, not a jump.
-        Older Android versions use these; newer ones need the explicit options the service passes.
+        The block screen starts as a transparent window with no window animation: One UI swaps window
+        animations for its own slide, so the page draws its fade + zoom itself, over the blocked app.
     -->
     <style name="Theme.InboxOnly.BlockScreen">
-        <item name="android:windowAnimationStyle">@style/BlockScreenAnimation</item>
-    </style>
-
-    <!-- It opens in its own task, so both the activity and task transitions need the fade. -->
-    <style name="BlockScreenAnimation" parent="@android:style/Animation.Activity">
-        <item name="android:activityOpenEnterAnimation">@anim/block_screen_enter</item>
-        <item name="android:activityCloseExitAnimation">@anim/block_screen_exit</item>
-        <item name="android:taskOpenEnterAnimation">@anim/block_screen_enter</item>
-        <item name="android:taskCloseExitAnimation">@anim/block_screen_exit</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>

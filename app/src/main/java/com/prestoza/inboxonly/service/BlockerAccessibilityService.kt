@@ -5,15 +5,12 @@
 package com.prestoza.inboxonly.service
 
 import android.accessibilityservice.AccessibilityService
-import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.net.toUri
-import com.prestoza.inboxonly.R
 import com.prestoza.inboxonly.appContainer
 import com.prestoza.inboxonly.debug.InspectorLogger
 import com.prestoza.inboxonly.domain.BlockAction
@@ -169,7 +166,8 @@ class BlockerAccessibilityService : AccessibilityService() {
                 // A fresh block shows the block screen; its buttons offer the way out. If the surface is
                 // back right after that (or after an action), act directly so the user can't get stuck.
                 val intent = BlockScreenActivity.intent(this, packageName, appId, decision)
-                if (!plan.escalated && startSafely(intent, blockScreenAnimation())) {
+                // No window animation: the page draws its own fade + zoom (see BlockScreenActivity).
+                if (!plan.escalated && startSafely(intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))) {
                     throttle.recordScreenShown(packageName, decision.surfaceId, now)
                 } else {
                     val performed = plan.actions.firstOrNull(::perform) ?: return
@@ -212,19 +210,11 @@ class BlockerAccessibilityService : AccessibilityService() {
             }
         }
 
-    // The block screen opens in its own task, and One UI (like Android 14+) ignores theme animations
-    // for task launches, so the fade + zoom is passed explicitly. 0 = the app underneath stays still.
-    private fun blockScreenAnimation(): Bundle =
-        ActivityOptions.makeCustomAnimation(this, R.anim.block_screen_enter, 0).toBundle()
-
     // Accessibility services may start activities from the background: the system binds them, which
     // exempts them from Android's background-activity-launch restrictions.
-    private fun startSafely(
-        intent: Intent,
-        options: Bundle? = null,
-    ): Boolean =
+    private fun startSafely(intent: Intent): Boolean =
         try {
-            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options)
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         } catch (_: ActivityNotFoundException) {
             false
@@ -254,8 +244,8 @@ class BlockerAccessibilityService : AccessibilityService() {
         const val CONTENT_THROTTLE_MS = 250L
         const val COOLDOWN_RECHECK_SLACK_MS = 50L
 
-        // Longer than the block screen's fade-out, so Back reaches the app underneath, not the screen.
-        const val BACK_AFTER_SCREEN_MS = 450L
+        // The page has faded out before it asks; this just lets its window go so Back reaches the app.
+        const val BACK_AFTER_SCREEN_MS = 150L
         const val LISTENED_EVENT_TYPES =
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     }
