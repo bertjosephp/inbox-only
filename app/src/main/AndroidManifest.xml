@@ -38,7 +38,26 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-pressing the Quick Settings tile opens this activity. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
         </activity>
+
+        <!-- The Quick Settings tile. Only the system (holding BIND_QUICK_SETTINGS_TILE) can bind it. -->
+        <service
+            android:name=".service.FocusTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_focus"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
 
         <!-- Fired by AlarmManager at Focus edges. Not exported: only our own PendingIntent reaches it. -->
         <receiver
