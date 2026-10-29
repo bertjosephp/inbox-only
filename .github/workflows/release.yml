@@ -54,7 +54,10 @@ jobs:
         run: |
           apk="inbox-only-${GITHUB_REF_NAME}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$apk"
-          gh release create "$GITHUB_REF_NAME" "$apk" \
+          # Tags with a suffix (v1.0.0-rc.1) are release candidates for on-device testing.
+          prerelease=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" "$apk" $prerelease \
             --title "Inbox Only ${GITHUB_REF_NAME}" \
             --notes "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/CHANGELOG.md). Install steps are in the README."
       - name: Clean up keystore
