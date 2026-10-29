@@ -10,6 +10,16 @@
         android:name="android.permission.INTERNET"
         tools:node="remove" />
 
+    <!--
+        Exact alarms fire timer and schedule edges on time even in Doze. USE_EXACT_ALARM (Android 13+)
+        is auto-granted; Play restricts it, but this app is sideloaded. SCHEDULE_EXACT_ALARM covers
+        Android 12/12L only. See AlarmScheduler.kt for the full reasoning.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+
     <application
         android:name=".InboxOnlyApp"
         android:allowBackup="false"
@@ -29,5 +39,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Fired by AlarmManager at Focus edges. Not exported: only our own PendingIntent reaches it. -->
+        <receiver
+            android:name=".service.AlarmReceiver"
+            android:exported="false" />
     </application>
 </manifest>

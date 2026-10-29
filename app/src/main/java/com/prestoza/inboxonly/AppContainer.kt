@@ -10,6 +10,8 @@ import com.prestoza.inboxonly.data.FocusStateStore
 import com.prestoza.inboxonly.data.SettingsRepository
 import com.prestoza.inboxonly.data.SystemTimeSource
 import com.prestoza.inboxonly.data.TimeSource
+import com.prestoza.inboxonly.service.AndroidAlarmScheduler
+import com.prestoza.inboxonly.service.FocusCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,4 +35,13 @@ class AppContainer(
     val settingsRepository = SettingsRepository(appContext.settingsDataStore)
     val focusStateStore = FocusStateStore(appContext.focusStateDataStore)
     val counterStore = CounterStore(appContext.counterDataStore)
+
+    val focusCoordinator =
+        FocusCoordinator(
+            settingsRepository = settingsRepository,
+            focusStateStore = focusStateStore,
+            counterStore = counterStore,
+            timeSource = timeSource,
+            alarmScheduler = AndroidAlarmScheduler(appContext),
+        )
 }
