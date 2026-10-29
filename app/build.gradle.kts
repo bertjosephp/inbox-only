@@ -20,8 +20,24 @@ android {
         versionName = "1.0.0"
     }
 
+    // Release signing comes only from environment variables (set by CI from repo secrets, see
+    // docs/TECHNICAL.md). Without them, assembleRelease produces an unsigned APK. No keystore is ever
+    // committed.
+    val keystorePath = providers.environmentVariable("SIGNING_KEYSTORE_PATH").orNull
+    if (keystorePath != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = providers.environmentVariable("SIGNING_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("SIGNING_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

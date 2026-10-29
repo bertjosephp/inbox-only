@@ -32,17 +32,25 @@ Run all of spotlessCheck, testDebugUnitTest, lintDebug, assembleDebug before eve
 ## Architecture map (`app/src/main/java/com/prestoza/inboxonly/`)
 - `domain/` — pure Kotlin, no `android.*` imports. All decisions live here and are unit tested:
   `FocusState`, `FocusController` (state transitions), `ScheduleCalculator` (java.time),
-  `BlockDecider`, `ReelFromChatTracker`, `Settings`, rules model.
-- `data/` — DataStore-backed `SettingsRepository`, `FocusStateStore`, `CounterStore`; `rules/` loads
-  `assets/rules.json`.
-- `service/` — thin Android adapters: `BlockerAccessibilityService`, `FocusTileService`,
-  `AlarmScheduler`, `AlarmReceiver`, `BootReceiver`.
+  `BlockDecider`, `ReelFromChatTracker`, `BlockThrottle`, `Rules` + `RulesValidator`, `Settings`,
+  `BlockCatalog` (app/surface IDs shown in settings), `TileStatusFormatter`, `DailyCount`.
+- `data/` — DataStore-backed `SettingsRepository`, `FocusStateStore`, `CounterStore`, `OnboardingStore`;
+  `rules/RulesRepository` loads `assets/rules.json`.
+- `service/` — thin Android adapters: `BlockerAccessibilityService` + `ScreenSignatureReader`,
+  `FocusTileService`, `FocusCoordinator` (the only place Focus state changes are applied),
+  `AlarmScheduler`, `AlarmReceiver`, `BootReceiver`, `PermissionStatus`.
 - `ui/` — Compose `MainActivity`, `SettingsScreen`, `OnboardingScreen`.
 - `AppContainer` — manual dependency injection (no Hilt), created by the `Application` subclass.
 - `src/debug/` — `InspectorLogger` (real); `src/release/` — no-op twin.
 
 Focus state has a single source of truth (`FocusStateStore`), always read through
 `FocusController.reconcile(...)` so expired states resolve correctly even if an alarm was late.
+
+## Rules and fixtures
+- `assets/rules.json` is a placeholder (`"placeholder": true`) until real captures exist; placeholder rules
+  block nothing. Unit tests use `src/test/resources/fixture_rules.json` + `FixtureScreens.kt` (fake IDs).
+- `ServiceConfigTest` keeps the service XML `packageNames` equal to the packages in rules.json.
+- Never set `AccessibilityServiceInfo.packageNames` to null at runtime (null = all apps).
 
 ## Conventions
 - Conventional Commits with scopes (`feat(tile): …`). Small commits, each building and passing tests.

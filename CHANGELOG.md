@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   length, Reels from chats, strict mode, permission footer with Fix buttons), Material 3 with dynamic
   color. Three-step onboarding: accessibility with Android 13+ restricted-settings help, battery
   optimization with Samsung "Never sleeping apps" guidance, and adding the tile.
+- Release workflow (M8): pushing a `v*` tag builds a signed APK from repository secrets, verifies its
+  signature and the no-INTERNET guarantee, and attaches it to a GitHub Release.
+- Documentation (M8): final README, `docs/TECHNICAL.md` (architecture, Mermaid diagrams, rules format,
+  build-from-source, release signing), `docs/UPDATING_RULES.md`, `docs/TESTING.md`, `docs/DECISIONS.md`.
+
+### Fixed
+- The tile is only updated while Quick Settings is listening, avoiding updates after the shade closed. (M8)
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
