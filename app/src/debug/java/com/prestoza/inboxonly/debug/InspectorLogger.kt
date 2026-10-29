@@ -8,6 +8,8 @@ package com.prestoza.inboxonly.debug
 
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import com.prestoza.inboxonly.domain.Decision
+import com.prestoza.inboxonly.domain.ScreenSignature
 import com.prestoza.inboxonly.service.recycleCompat
 
 /** Logs screen outlines for writing rules. Debug builds only. */
@@ -39,6 +41,22 @@ object InspectorLogger {
         // Logcat truncates long entries, so log line by line.
         lines.forEach { Log.d(TAG, it) }
         Log.d(TAG, "===== end =====")
+    }
+
+    /**
+     * Logs what the rules saw and decided, so a rule that doesn't fire can be debugged on device.
+     * Signatures hold only rule-referenced IDs and descriptions; the Reel identity is shown as present/absent.
+     */
+    fun logDecision(
+        signature: ScreenSignature,
+        decision: Decision,
+    ) {
+        val reel = if (signature.reelIdentity != null) "present" else "none"
+        val summary =
+            "ids=${signature.viewIds.sorted()} selected=${signature.selectedViewIds.sorted()} " +
+                "descs=${signature.contentDescriptions.sorted()} " +
+                "selectedDescs=${signature.selectedContentDescriptions.sorted()} reelIdentity=$reel"
+        Log.d(TAG, "decision ${signature.packageName}: $decision | $summary")
     }
 
     private fun collect(

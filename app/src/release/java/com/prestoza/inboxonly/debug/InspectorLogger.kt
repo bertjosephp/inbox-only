@@ -3,6 +3,8 @@
 package com.prestoza.inboxonly.debug
 
 import android.view.accessibility.AccessibilityNodeInfo
+import com.prestoza.inboxonly.domain.Decision
+import com.prestoza.inboxonly.domain.ScreenSignature
 
 /** Does nothing in release builds. */
 object InspectorLogger {
@@ -15,5 +17,12 @@ object InspectorLogger {
         root: AccessibilityNodeInfo,
         packageName: String,
         windowClass: String?,
+    ) = Unit
+
+    /** No-op in release builds. */
+    @Suppress("UNUSED_PARAMETER")
+    fun logDecision(
+        signature: ScreenSignature,
+        decision: Decision,
     ) = Unit
 }
