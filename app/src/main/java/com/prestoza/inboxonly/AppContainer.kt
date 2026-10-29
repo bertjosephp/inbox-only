@@ -7,6 +7,7 @@ import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import com.prestoza.inboxonly.data.CounterStore
 import com.prestoza.inboxonly.data.FocusStateStore
+import com.prestoza.inboxonly.data.OnboardingStore
 import com.prestoza.inboxonly.data.SettingsRepository
 import com.prestoza.inboxonly.data.SystemTimeSource
 import com.prestoza.inboxonly.data.TimeSource
@@ -22,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 private val Context.focusStateDataStore by preferencesDataStore(name = "focus_state")
 private val Context.counterDataStore by preferencesDataStore(name = "counter")
+private val Context.onboardingDataStore by preferencesDataStore(name = "onboarding")
 
 /** Holds the app's singletons. Created once in [InboxOnlyApp]. */
 class AppContainer(
@@ -37,6 +39,7 @@ class AppContainer(
     val focusStateStore = FocusStateStore(appContext.focusStateDataStore)
     val counterStore = CounterStore(appContext.counterDataStore)
     val rulesRepository = RulesRepository(appContext)
+    val onboardingStore = OnboardingStore(appContext.onboardingDataStore)
 
     val focusCoordinator =
         FocusCoordinator(

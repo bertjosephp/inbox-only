@@ -17,6 +17,12 @@
     -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!--
+        Lets onboarding show the system "stop optimizing battery usage?" dialog directly. Play restricts
+        this; it's fine for a sideloaded app. Nothing is changed without the user confirming.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Re-register the schedule alarm after a reboot (alarms don't survive one). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission
