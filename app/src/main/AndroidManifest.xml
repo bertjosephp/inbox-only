@@ -59,6 +59,23 @@
                 android:value="true" />
         </service>
 
+        <!--
+            The blocker. Only the system can bind it (BIND_ACCESSIBILITY_SERVICE), and the user must
+            switch it on under Settings > Accessibility. Its config XML limits it to four apps.
+        -->
+        <service
+            android:name=".service.BlockerAccessibilityService"
+            android:exported="false"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
         <!-- Fired by AlarmManager at Focus edges. Not exported: only our own PendingIntent reaches it. -->
         <receiver
             android:name=".service.AlarmReceiver"

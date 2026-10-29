@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Inbox Only</string>
     <string name="tile_label">Focus</string>
+    <string name="accessibility_service_label">Inbox Only blocker</string>
+    <string name="accessibility_service_description">While Focus is on, notices when a Reels, feed, Shorts or Reddit browsing screen opens in Instagram, Facebook, YouTube or Reddit, and steps back out of it. It looks only at screen structure (which screen is showing), never reads or stores your messages, and has no internet access. When Focus is off it receives nothing.</string>
 </resources>

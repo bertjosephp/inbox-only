@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Accessibility service configuration.
+
+    packageNames: the system only delivers events from these four apps, never from anything else
+    (Messenger, banking, the keyboard...). This is the main battery and privacy filter.
+    It must stay in sync with the packages in assets/rules.json (a unit test checks this).
+
+    Event types: only "a new screen/window appeared" and "content inside it changed". No scroll,
+    click or text events. When Focus is off, the service clears these at runtime and receives nothing.
+
+    flagReportViewIds: lets us see view resource IDs (e.g. "com.instagram.android:id/...") so rules can
+    match screen *structure* instead of on-screen text.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="100"
+    android:packageNames="com.instagram.android,com.facebook.katana,com.google.android.youtube,com.reddit.frontpage" />
