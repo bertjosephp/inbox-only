@@ -51,6 +51,8 @@ class FocusCoordinatorTest {
     private class Harness(
         val coordinator: FocusCoordinator,
         val store: FocusStateStore,
+        val settings: SettingsRepository,
+        val counter: CounterStore,
         val clock: FakeClock,
         val alarms: RecordingAlarms,
     )
@@ -62,17 +64,19 @@ class FocusCoordinatorTest {
                 produceFile = { File(tmp.root, "$name.preferences_pb") },
             )
         val store = FocusStateStore(dataStore("focus"))
+        val settings = SettingsRepository(dataStore("settings"))
+        val counter = CounterStore(dataStore("counter"))
         val clock = FakeClock(start, zone)
         val alarms = RecordingAlarms()
         val coordinator =
             FocusCoordinator(
-                settingsRepository = SettingsRepository(dataStore("settings")),
+                settingsRepository = settings,
                 focusStateStore = store,
-                counterStore = CounterStore(dataStore("counter")),
+                counterStore = counter,
                 timeSource = clock,
                 alarmScheduler = alarms,
             )
-        return Harness(coordinator, store, clock, alarms)
+        return Harness(coordinator, store, settings, counter, clock, alarms)
     }
 
     @Test
@@ -138,6 +142,54 @@ class FocusCoordinatorTest {
             h.clock.now = h.clock.now.plus(Duration.ofHours(2))
             assertEquals(FocusState.Off, h.coordinator.currentState())
             assertEquals(FocusState.Manual(at("2026-10-29T21:00")), h.store.current())
+        }
+
+    @Test
+    fun `break flow through the coordinator - tap, alarm at resume, focus back on`() =
+        runTest {
+            val h = harness(at("2026-10-29T12:00"))
+            h.coordinator.updateSettings { it.copy(schedule = Schedule(enabled = true)) }
+            h.coordinator.onTileTap()
+            assertEquals(FocusState.Break(at("2026-10-29T18:00"), at("2026-10-29T12:05")), h.store.current())
+            assertEquals(at("2026-10-29T12:05"), h.alarms.scheduled.last())
+
+            h.clock.now = at("2026-10-29T12:05")
+            h.coordinator.refresh()
+            assertEquals(FocusState.Scheduled(at("2026-10-29T18:00")), h.store.current())
+            assertEquals(at("2026-10-29T18:00"), h.alarms.scheduled.last())
+        }
+
+    @Test
+    fun `time zone change re-registers the alarm at the new local schedule edge`() =
+        runTest {
+            val h = harness(at("2026-10-29T20:00")) // Thursday evening in LA, outside the window
+            h.coordinator.updateSettings { it.copy(schedule = Schedule(enabled = true)) }
+            assertEquals(at("2026-10-30T08:00"), h.alarms.scheduled.last())
+
+            // Fly to New York: Friday 08:00 there is three hours earlier on the timeline.
+            val newYork = ZoneId.of("America/New_York")
+            val moved = FakeClock(h.clock.now, newYork)
+            val coordinator =
+                FocusCoordinator(
+                    settingsRepository = h.settings,
+                    focusStateStore = h.store,
+                    counterStore = h.counter,
+                    timeSource = moved,
+                    alarmScheduler = h.alarms,
+                )
+            coordinator.refresh()
+            assertEquals(LocalDateTime.parse("2026-10-30T08:00").atZone(newYork).toInstant(), h.alarms.scheduled.last())
+        }
+
+    @Test
+    fun `reboot mid-break with the break already over resumes focus on refresh`() =
+        runTest {
+            val h = harness(at("2026-10-29T12:00"))
+            h.coordinator.updateSettings { it.copy(schedule = Schedule(enabled = true)) }
+            h.coordinator.onTileTap()
+            h.clock.now = at("2026-10-29T12:40") // phone was off when the alarm should have fired
+            h.coordinator.refresh()
+            assertEquals(FocusState.Scheduled(at("2026-10-29T18:00")), h.store.current())
         }
 
     @Test

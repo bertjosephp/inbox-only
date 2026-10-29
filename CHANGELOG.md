@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (allow one Reel opened from a chat; swiping to another goes back), `BlockThrottle` (700 ms per-app
   cooldown; escalates redirect → back → home if a surface reappears), `RulesValidator`, and the
   service's signature reader and action executor. Unit tests use hand-written fixture signatures.
+- Schedule, breaks and strict mode (M6): alarms re-registered on boot, clock change, time zone change,
+  app update and exact-alarm permission change, and on every process start. Tapping the tile inside a
+  window starts a break (or, in strict mode, shows "Strict mode: Focus until 6:00 PM").
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
