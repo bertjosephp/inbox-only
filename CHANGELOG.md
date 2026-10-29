@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Debug-only screen inspector logging redacted outlines to Logcat (`InboxOnlyInspector`), plus
   `scripts/inspect.sh`. Placeholder `rules.json` that blocks nothing. The tile shows `Set up` and opens
   the app while the accessibility service is disabled.
+- Blocking engine (M5): data-driven `rules.json` model (allowed screens, blockable surfaces, Reel viewer,
+  ordered actions), `BlockDecider` (allowed screens always win, fail open), `ReelFromChatTracker`
+  (allow one Reel opened from a chat; swiping to another goes back), `BlockThrottle` (700 ms per-app
+  cooldown; escalates redirect → back → home if a surface reappears), `RulesValidator`, and the
+  service's signature reader and action executor. Unit tests use hand-written fixture signatures.
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)

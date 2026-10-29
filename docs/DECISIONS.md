@@ -84,3 +84,18 @@ requires Focus. Release builds have `ENABLED = false` and stay fully inert.
 changes are checked immediately.
 **Why:** A playing video or Reel fires content changes continuously. A trailing debounce would never
 settle and never fire, which would make Reels unblockable.
+
+## ADR-014: Block actions per surface, chosen by the owner
+**Decision:** Each surface in `rules.json` lists actions tried in order, with Home as the guaranteed last
+resort. Intended actions for a blocked landing screen: Instagram → DM inbox (deep link), Facebook →
+Messenger (or Facebook's own inbox, if one exists on device), YouTube → close (Home), Reddit → close (Home).
+**Why:** YouTube and Facebook open straight onto their feed. Pressing Back there just exits, so a
+redirect is the only way to keep the useful parts reachable. The owner chose to simply close YouTube and
+Reddit. Deep links are only added after they're verified on the phone.
+
+## ADR-015: Reel identity is an in-memory hash
+**Decision:** To notice a swipe to a different Reel, the service hashes the content description or text
+of one rule-chosen node in the Reel viewer (e.g. the author label). It keeps only the hash, in memory.
+**Why:** `TYPE_VIEW_SCROLLED` is off-limits for battery reasons, and comparing a hash is the cheapest
+way to tell Reels apart. If no node is suitable, the tracker allows the opened Reel until the viewer
+is left, so Reel-from-chat stays usable rather than broken.
