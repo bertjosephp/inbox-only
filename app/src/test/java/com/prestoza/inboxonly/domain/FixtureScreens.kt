@@ -27,19 +27,26 @@ object FixtureScreens {
 
     private fun yt(id: String) = "com.google.android.youtube:id/$id"
 
-    // Instagram's main activity keeps every tab's content in the tree, including an off-screen Reels pager.
-    private val igMainTabs = setOf(ig("feed_tab"), ig("clips_tab"), ig("direct_tab"), ig("search_tab"))
+    // Instagram's main activity keeps every tab's content in the tree, including an off-screen Reels pager
+    // and the Home feed's logo.
+    private val igMainTabs =
+        setOf(ig("feed_tab"), ig("clips_tab"), ig("direct_tab"), ig("search_tab"), ig("profile_tab"))
     private val igOffscreenReels = setOf(ig("clips_viewer_view_pager"), ig("clips_author_username"))
+    private const val IG_HOME_LOGO = "Instagram Home Feed"
 
     private fun igMain(
-        selectedTab: String,
+        selectedTab: String?,
         extra: Set<String> = emptySet(),
     ) = ScreenSignature(
         IG,
         windowClass = "com.instagram.mainactivity.InstagramMainActivity",
         viewIds = igMainTabs + extra,
-        selectedViewIds = setOf(ig(selectedTab)),
+        selectedViewIds = setOfNotNull(selectedTab?.let(::ig)),
+        contentDescriptions = setOf(IG_HOME_LOGO),
     )
+
+    /** c1 #1–#4, c2 #1–#2: Home feed right after launch, before any tab has been tapped (none is selected). */
+    val igColdStartFeed = igMain(selectedTab = null)
 
     /** c1 #7: Home feed. */
     val igHomeFeed = igMain("feed_tab", igOffscreenReels)

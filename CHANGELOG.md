@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Facebook "Video / Watch" surface: it doesn't exist in the current Facebook app.
 
 ### Fixed
+- Instagram's Home feed is now blocked right after the app launches. Instagram marks no tab as
+  selected until one is tapped, so the feed rule never matched; rules gain `noneSelectedViewIds`.
 - The tile is only updated while Quick Settings is listening, avoiding updates after the shade closed. (M8)
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
