@@ -16,6 +16,9 @@
         Android 12/12L only. See AlarmScheduler.kt for the full reasoning.
     -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Re-register the schedule alarm after a reboot (alarms don't survive one). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         android:maxSdkVersion="32" />
@@ -92,5 +95,21 @@
         <receiver
             android:name=".service.AlarmReceiver"
             android:exported="false" />
+
+        <!--
+            Re-registers alarms after boot, clock/time zone changes and app updates. Exported because the
+            system sends these broadcasts; they're "protected", so other apps can't fake them.
+        -->
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
