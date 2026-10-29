@@ -121,7 +121,9 @@ fields are ignored, so newer files still load in older builds.
       "match": { … },
       "surfaceId": "reels_tab", // which toggle governs Reels
       "openedFrom": ["dm_thread"],
+      "openedFromWindowClasses": [], // optional: windows that only open from a chat in another app
       "identityViewId": "…",    // optional: node whose label differs per Reel (hashed in memory)
+      "identityDescriptionPattern": "…", // optional: same, as a regex over content descriptions
       "actions": [{ "type": "back" }]
     },
     "surfaces": [               // blockable; first match wins
@@ -158,7 +160,8 @@ Copy view IDs exactly as the inspector prints them: classic views are fully qual
 its view IDs, so its rules use tab content descriptions such as `"Home, tab 1 of 5"`. Those are
 English-UI strings and can change when a badge is added.
 `RulesValidator` (run by `RulesTest` against the shipped file) rejects unknown app or surface IDs, empty
-matches, empty action lists and dangling `openedFrom` references.
+matches, empty action lists, dangling `openedFrom` references and Reel viewers with no way to be
+opened from a chat.
 
 ## 4. Scheduling and alarms
 

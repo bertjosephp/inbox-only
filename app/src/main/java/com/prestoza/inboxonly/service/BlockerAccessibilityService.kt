@@ -75,7 +75,15 @@ class BlockerAccessibilityService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                event.className?.let { windowClassByPackage[packageName] = it.toString() }
+                event.className?.toString()?.let { windowClass ->
+                    windowClassByPackage[packageName] = windowClass
+                    BlockDecider.onWindowOpened(
+                        packageName,
+                        windowClass,
+                        appContainer.rulesRepository.rules,
+                        reelTrackers.getOrPut(packageName) { ReelFromChatTracker() },
+                    )
+                }
                 handler.removeCallbacks(pendingCheck)
                 pendingPackage = null
                 onScreenMaybeChanged(packageName)

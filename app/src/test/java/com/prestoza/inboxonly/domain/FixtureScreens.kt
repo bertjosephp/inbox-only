@@ -121,6 +121,18 @@ object FixtureScreens {
     /** c1 #30: the ☰ menu (covers the tab bar). */
     val fbMenu = fb(emptySet())
 
+    const val FB_IMMERSIVE = "com.facebook.katana.immersiveactivity.ImmersiveActivity"
+
+    /**
+     * c3 #1–#3: a Reel opened from a Messenger chat, then swiped twice. Facebook opens these in a separate
+     * window. The "View ‹creator›'s reels" label (not in the signature: it's only hashed) gives [identity].
+     */
+    fun fbReelFromMessenger(identity: Int?) =
+        ScreenSignature(FB, FB_IMMERSIVE, contentDescriptions = setOf("Reel details"), reelIdentity = identity)
+
+    /** c3 #4: Back from that viewer lands on Facebook's feed while the window class is still the viewer's. */
+    val fbFeedAfterMessengerReel = fbFeed.copy(windowClass = FB_IMMERSIVE)
+
     /** c1 #62: Home. */
     val ytHome =
         ScreenSignature(

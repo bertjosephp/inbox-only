@@ -111,6 +111,17 @@ silently never be blocked. This departs from the original "no full-tree walks" g
 small: real screens have a few hundred nodes, checks are throttled to at most 4 a second, and they only
 happen while Focus is on and one of the four apps is in front.
 
+## ADR-018: Facebook Reels opened from Messenger
+**Decision:** Facebook's Reel viewer is a `reelViewer` with `openedFromWindowClasses`: when Facebook opens
+`ImmersiveActivity`, the next Reel counts as opened from a chat. Its identity is the hash of the
+"View ‹creator›'s reels" description (`identityDescriptionPattern`), because Facebook's view IDs are
+obfuscated. A swipe to another Reel opens Messenger again.
+**Why:** The service can't see Messenger, so "came from a chat" can't be observed directly. The capture
+showed that Reels from Messenger open in `ImmersiveActivity`, while every Reel opened inside Facebook
+(feed or Reels tab) stays in `FbMainTabActivity`. The window opens before its content is ready, so the
+tracker is told on the window-state event itself. Back from the viewer lands on Facebook's feed rather
+than Messenger, so the block action launches Messenger directly.
+
 ## ADR-017: Facebook rules use tab descriptions; no "Video" surface
 **Decision:** Facebook's view IDs are obfuscated (`(name removed)`), so its rules match the bottom tabs'
 content descriptions (`"Home, tab 1 of 5"`, `"Reels, tab 2 of 5"`) and the Reel viewer's
