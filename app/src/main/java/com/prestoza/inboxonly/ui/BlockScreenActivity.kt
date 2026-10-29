@@ -2,13 +2,16 @@
 // user straight out. It's our own screen, opened with an intent: nothing in the blocked app is touched.
 // The main button takes the way out the rules prefer (DMs, Messenger, back, or closing the app).
 //
+// Entrance: fade + zoom, passed by the service when it opens the page (see blockScreenAnimation there).
 // It runs in its own task, hidden from Recents, so finishing it reveals the app underneath rather than
 // Inbox Only's settings. Back (button or gesture) never returns to the blocked feed: it closes the app.
 package com.prestoza.inboxonly.ui
 
+import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
@@ -76,6 +79,10 @@ class BlockScreenActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         request = readRequest(intent) ?: return finishAndRemoveTask()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Fade + shrink on the way out (the "Go back" path, where nothing else opens).
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, R.anim.block_screen_exit)
+        }
         onBackPressedDispatcher.addCallback(this) { closeBlockedApp() }
         setContent {
             InboxOnlyTheme {
@@ -130,9 +137,12 @@ class BlockScreenActivity : ComponentActivity() {
         finishAndRemoveTask()
     }
 
+    // Whatever opens next (DMs, Messenger, the home screen) fades in while this page fades out.
     private fun start(intent: Intent): Boolean =
         try {
-            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            val crossFade =
+                ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, R.anim.block_screen_exit)
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), crossFade.toBundle())
             true
         } catch (_: ActivityNotFoundException) {
             false

@@ -9,7 +9,10 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <!-- The block screen fades in and out instead of the usual slide, so it feels like a pause, not a jump. -->
+    <!--
+        The block screen fades and zooms instead of the usual slide, so it feels like a pause, not a jump.
+        Older Android versions use these; newer ones need the explicit options the service passes.
+    -->
     <style name="Theme.InboxOnly.BlockScreen">
         <item name="android:windowAnimationStyle">@style/BlockScreenAnimation</item>
     </style>
