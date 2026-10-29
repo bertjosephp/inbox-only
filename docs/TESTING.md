@@ -25,6 +25,8 @@ friend (or second account) who can send you a DM and a Reel.
 - [ ] "Until off" shows `On` (or `N blocked`) and never turns off by itself.
 - [ ] Long-press the tile → settings screen opens.
 - [ ] Turn the accessibility service off → tile shows `Set up`; tapping it opens the app. Turn it back on.
+- [ ] After installing an update, if Android leaves the blocker stopped → tile shows `Restart blocker`, the
+      settings footer shows "Blocker stopped" with **Fix**; switching it off and on clears both.
 - [ ] After blocking some screens, the subtitle shows `N blocked`. Tomorrow it starts from 0.
 
 ## 3. Blocking (Focus on, default settings)

@@ -20,7 +20,7 @@ object TileStatusFormatter {
     /**
      * @param state the reconciled focus state.
      * @param blockedToday today's block count, shown when there's nothing more useful to say.
-     * @param setupNeeded true when the accessibility service isn't enabled, so Focus can't work.
+     * @param blocker whether the accessibility service can block; if not, the tile asks for a fix.
      * @param use24Hour the device's clock preference.
      */
     fun status(
@@ -28,10 +28,14 @@ object TileStatusFormatter {
         now: Instant,
         zone: ZoneId,
         blockedToday: Int,
-        setupNeeded: Boolean,
+        blocker: BlockerHealth,
         use24Hour: Boolean,
     ): TileStatus {
-        if (setupNeeded) return TileStatus(active = false, subtitle = "Set up")
+        when (blocker) {
+            BlockerHealth.NOT_ENABLED -> return TileStatus(active = false, subtitle = "Set up")
+            BlockerHealth.STOPPED -> return TileStatus(active = false, subtitle = "Restart blocker")
+            BlockerHealth.RUNNING -> Unit
+        }
         return when (state) {
             FocusState.Off -> {
                 TileStatus(false, blockedLabel(blockedToday))

@@ -14,11 +14,14 @@ import androidx.core.net.toUri
 /** A snapshot of the app's system permissions. */
 data class PermissionStatus(
     val accessibilityEnabled: Boolean,
+    // Enabled but not running happens after app updates; see BlockerHealth.
+    val accessibilityRunning: Boolean,
     val batteryOptimizationIgnored: Boolean,
     val exactAlarmsAllowed: Boolean,
 ) {
     /** True when everything Focus needs is in place. */
-    val allGood: Boolean get() = accessibilityEnabled && batteryOptimizationIgnored && exactAlarmsAllowed
+    val allGood: Boolean
+        get() = accessibilityEnabled && accessibilityRunning && batteryOptimizationIgnored && exactAlarmsAllowed
 
     companion object {
         /** Reads the current status. Cheap; call it whenever a screen resumes. */
@@ -27,6 +30,7 @@ data class PermissionStatus(
             val alarms = context.getSystemService(AlarmManager::class.java)
             return PermissionStatus(
                 accessibilityEnabled = AccessibilityStatus.isServiceEnabled(context),
+                accessibilityRunning = AccessibilityStatus.isServiceRunning(context),
                 batteryOptimizationIgnored = power.isIgnoringBatteryOptimizations(context.packageName),
                 // USE_EXACT_ALARM (13+) can't be revoked and 10/11 need nothing; only 12/12L can say no.
                 exactAlarmsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms(),

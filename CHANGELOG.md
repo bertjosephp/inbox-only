@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Facebook "Video / Watch" surface: it doesn't exist in the current Facebook app.
 
 ### Fixed
+- After an update, Android can leave the blocker switched on but not running, so nothing was blocked
+  silently. The tile now shows `Restart blocker` and the settings footer offers a fix.
 - A Facebook Reel opened from a Messenger chat now plays; swiping on to other Reels opens Messenger again.
   Rules gain `openedFromWindowClasses` and `identityDescriptionPattern` for the Reel viewer.
 - Instagram's Home feed is now blocked right after the app launches. Instagram marks no tab as
