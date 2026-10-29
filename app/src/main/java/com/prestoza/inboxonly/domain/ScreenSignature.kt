@@ -11,7 +11,8 @@ package com.prestoza.inboxonly.domain
  * @property selectedViewIds the subset of [viewIds] whose view is in the selected state (e.g. the active tab).
  * @property contentDescriptions rule-referenced content descriptions present on screen.
  * @property selectedContentDescriptions the subset of [contentDescriptions] on a selected view.
- * @property reelIdentity an opaque per-Reel hash for the Reel viewer, used only in memory to notice swipes.
+ * @property itemIdentity an opaque hash identifying the Reel or video on screen, used only in memory to
+ *   notice a swipe or a move to another video. Never logged or stored.
  */
 data class ScreenSignature(
     val packageName: String,
@@ -20,5 +21,5 @@ data class ScreenSignature(
     val selectedViewIds: Set<String> = emptySet(),
     val contentDescriptions: Set<String> = emptySet(),
     val selectedContentDescriptions: Set<String> = emptySet(),
-    val reelIdentity: Int? = null,
+    val itemIdentity: Int? = null,
 )

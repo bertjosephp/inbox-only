@@ -26,14 +26,14 @@ object ScreenSignatureReader {
     ): ScreenSignature {
         val wantedIds = app.referencedViewIds
         val wantedDescriptions = app.referencedContentDescriptions
-        val identityViewId = app.reelViewer?.identityViewId
-        val identityPattern = app.reelIdentityDescriptionRegex
+        val identityViewId = app.itemIdentityViewId
+        val identityPattern = app.itemIdentityDescriptionRegex
 
         val viewIds = mutableSetOf<String>()
         val selectedViewIds = mutableSetOf<String>()
         val descriptions = mutableSetOf<String>()
         val selectedDescriptions = mutableSetOf<String>()
-        var reelIdentity: Int? = null
+        var itemIdentity: Int? = null
 
         forEachNode(root) { node ->
             val id = node.viewIdResourceName
@@ -43,14 +43,14 @@ object ScreenSignatureReader {
             }
             // An opaque hash of the Reel's identifying label (e.g. its author), so a swipe to another Reel
             // can be noticed. Only the hash is kept, in memory; it's never logged or stored.
-            if (id != null && id == identityViewId && reelIdentity == null) {
-                reelIdentity = (node.contentDescription ?: node.text)?.toString()?.hashCode()
+            if (id != null && id == identityViewId && itemIdentity == null) {
+                itemIdentity = (node.contentDescription ?: node.text)?.toString()?.hashCode()
             }
             val description = node.contentDescription?.toString()
-            if (identityPattern != null && reelIdentity == null && description != null &&
+            if (identityPattern != null && itemIdentity == null && description != null &&
                 identityPattern.matches(description)
             ) {
-                reelIdentity = description.hashCode()
+                itemIdentity = description.hashCode()
             }
             if (description != null && description in wantedDescriptions) {
                 descriptions += description
@@ -65,7 +65,7 @@ object ScreenSignatureReader {
             selectedViewIds = selectedViewIds,
             contentDescriptions = descriptions,
             selectedContentDescriptions = selectedDescriptions,
-            reelIdentity = reelIdentity,
+            itemIdentity = itemIdentity,
         )
     }
 

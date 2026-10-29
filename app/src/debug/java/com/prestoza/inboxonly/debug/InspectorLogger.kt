@@ -51,11 +51,11 @@ object InspectorLogger {
         signature: ScreenSignature,
         decision: Decision,
     ) {
-        val reel = if (signature.reelIdentity != null) "present" else "none"
+        val reel = if (signature.itemIdentity != null) "present" else "none"
         val summary =
             "ids=${signature.viewIds.sorted()} selected=${signature.selectedViewIds.sorted()} " +
                 "descs=${signature.contentDescriptions.sorted()} " +
-                "selectedDescs=${signature.selectedContentDescriptions.sorted()} reelIdentity=$reel"
+                "selectedDescs=${signature.selectedContentDescriptions.sorted()} itemIdentity=$reel"
         Log.d(TAG, "decision ${signature.packageName}: $decision | $summary")
     }
 

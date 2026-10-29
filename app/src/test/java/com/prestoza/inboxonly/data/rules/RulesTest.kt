@@ -137,7 +137,7 @@ class RulesTest {
 
     @Test
     fun `facebook reel identity pattern matches only the creator label`() {
-        val pattern = requireNotNull(FixtureScreens.rules.forPackage(FixtureScreens.FB)?.reelIdentityDescriptionRegex)
+        val pattern = requireNotNull(FixtureScreens.rules.forPackage(FixtureScreens.FB)?.itemIdentityDescriptionRegex)
         // Descriptions from capture 3 (public creators' labels).
         assertTrue(pattern.matches("View Eric Nam 에릭남's reels"))
         assertTrue(pattern.matches("View Chief Kweef's reels"))

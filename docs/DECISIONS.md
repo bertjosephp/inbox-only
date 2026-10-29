@@ -129,3 +129,53 @@ content descriptions (`"Home, tab 1 of 5"`, `"Reels, tab 2 of 5"`) and the Reel 
 **Why:** The owner's Facebook has no Video/Watch screen; its tabs are Home, Reels, Groups, Notifications and
 Profile. Descriptions are English-UI strings, so a language change or a badge in the label can stop a
 match. That fails open, and UPDATING_RULES.md covers the fix.
+
+## ADR-019: A block screen instead of an instant exit
+**Decision:** A blocked surface opens Inbox Only's own `BlockScreenActivity` over the app. It's an opaque,
+fading Material 3 page with the rule's way out as its main button (`label` on `redirect`/`launch`
+actions, else "Go back" or "Close ‹app›") plus "Close ‹app›". The page runs in its own task, hidden
+from Recents; its Back gesture goes Home. "Go back" is handed to the accessibility service, which
+presses Back once the page has faded out. If the same surface comes back within 2 s of the page, the
+throttle escalates and the actions run directly, as before.
+**Why:** On device, being yanked out of an app felt abrupt; a page says *why* and lets the user choose
+where to go. It's still only our own activity opened by an intent, so nothing in the target apps is
+touched (no ban risk). Opaque, not a translucent dialog, so the feed isn't visible or audible behind
+it. Its own task stops "close" from revealing Inbox Only's settings, and Back going Home stops the
+page from dropping the user back into the feed it covers. The escalation keeps a safety net if the page
+ever fails to appear.
+
+## ADR-020: Instagram and Facebook blocks always lead to messages
+**Decision:** Every Instagram block screen offers **Open DMs**, and every Facebook one **Open Messenger**,
+plus "Close ‹app›". That includes the Reels tabs and a Reel swiped to from a chat. "Go back" stays only
+for YouTube Shorts. `back` remains in those rules after the main action, but only as the throttle's
+fallback, never as a button. `BlockScreenFormatterTest` pins this.
+**Why:** The owner's call after using it: on these two apps, the useful way out is always the inbox,
+and "Go back" could land on another feed. For a Reel swiped to from a DM this means the inbox rather than
+the exact thread, which is one tap away.
+
+## ADR-021: One YouTube video per visit
+**Decision:** YouTube's watch page stays allowed, but a `followOn` rule blocks moving on to a different
+video while staying on it ("Next videos" in settings, on by default). A visit starts on the first watch
+page after any other screen, or when YouTube's `MainActivity` window opens (a link while YouTube is in
+the background). The video's identity is a hash of the collapsed `title` view, kept in memory only.
+YouTube shows that view only while a video loads, and not for a video opened from a link, so a visit
+may start without an identity; a title seen within 2 s of the start still counts as the first video.
+Shorts became close-only, so every YouTube block offers **Close YouTube** alone.
+**Why:** On device, a linked video's "up next" list made the watch page a feed. The capture
+(`capture-5.txt`) showed the `title` view appears exactly once per newly loaded video (after a link,
+search result or related tap), never while scrolling, and that the title-like first item of the list is
+replaced by related cards as you scroll, so that can't be the identity. Known limit: a link opened while
+YouTube is closed doesn't fire the reset window; it still works because a linked video shows no title,
+but if YouTube ever starts showing one, that first video could be blocked. Closing the block screen and
+reopening YouTube on the blocked video starts a new visit; that takes deliberate effort, so it's accepted.
+
+## ADR-023: Pause YouTube before its next-video block screen
+**Decision:** A `followOn` rule may set `pauseMedia`. YouTube's does: before showing the block screen, the
+service sends `KEYCODE_MEDIA_PAUSE` through `AudioManager.dispatchMediaKeyEvent` and waits 150 ms. The
+owner approved widening the "global actions or intents" hard rule (CLAUDE.md) for this one case.
+**Why:** On device, YouTube Premium shrank the still-playing blocked video into a picture-in-picture
+window that stays on top of everything, including the block screen; expanding it led straight back to
+the watch page. PiP only starts for a playing video, so pausing first prevents it, and also stops
+Premium's background audio. The media key is the same system signal a headphone button sends: it
+reaches the active player's media session and touches nothing in YouTube's UI. It's limited to the
+next-video rule, where a video is certainly playing, so it can't pause another app's music.

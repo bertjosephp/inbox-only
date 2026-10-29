@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 8,
   "placeholder": false,
   "comment": "Selectors captured on a Galaxy S25+ with scripts/inspect.sh on 2026-10-29. Never add an identifier that wasn't captured on a real device; see docs/UPDATING_RULES.md. Compose screens (Reddit, parts of Instagram/YouTube) expose bare tags like home_screen_surface instead of package:id/name. Facebook view IDs are obfuscated, so Facebook rules use tab content descriptions (English UI). The instagram://direct-inbox deep link was verified on the same device with adb.",
   "apps": [
@@ -19,14 +19,17 @@
         "surfaceId": "reels_tab",
         "openedFrom": ["dm_thread"],
         "identityViewId": "com.instagram.android:id/clips_author_username",
-        "actions": [{ "type": "back" }]
+        "actions": [
+          { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
+          { "type": "back" }
+        ]
       },
       "surfaces": [
         {
           "id": "reels_tab",
           "match": { "selectedViewIds": ["com.instagram.android:id/clips_tab"] },
           "actions": [
-            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
             { "type": "back" }
           ]
         },
@@ -37,7 +40,7 @@
             "anyViewIds": ["com.instagram.android:id/grid_card_layout_container"]
           },
           "actions": [
-            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
             { "type": "back" }
           ]
         },
@@ -45,7 +48,7 @@
           "id": "home_feed",
           "match": { "selectedViewIds": ["com.instagram.android:id/feed_tab"] },
           "actions": [
-            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
             { "type": "back" }
           ]
         },
@@ -63,7 +66,7 @@
             ]
           },
           "actions": [
-            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android" },
+            { "type": "redirect", "uri": "instagram://direct-inbox", "package": "com.instagram.android", "label": "Open DMs" },
             { "type": "back" }
           ]
         }
@@ -83,23 +86,23 @@
         "surfaceId": "reels",
         "openedFromWindowClasses": ["com.facebook.katana.immersiveactivity.ImmersiveActivity"],
         "identityDescriptionPattern": "View .+'s reels",
-        "actions": [{ "type": "launch", "package": "com.facebook.orca" }, { "type": "back" }]
+        "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
       },
       "surfaces": [
         {
           "id": "reels",
           "match": { "selectedContentDescriptions": ["Reels, tab 2 of 5"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
         },
         {
           "id": "reels",
           "match": { "contentDescriptions": ["Reel details"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
         },
         {
           "id": "news_feed",
           "match": { "selectedContentDescriptions": ["Home, tab 1 of 5"] },
-          "actions": [{ "type": "launch", "package": "com.facebook.orca" }, { "type": "back" }]
+          "actions": [{ "type": "launch", "package": "com.facebook.orca", "label": "Open Messenger" }, { "type": "back" }]
         }
       ]
     },
@@ -116,11 +119,19 @@
         },
         { "id": "subscriptions", "match": { "selectedContentDescriptions": ["Subscriptions"] } }
       ],
+      "followOn": {
+        "match": { "anyViewIds": ["com.google.android.youtube:id/watch_panel"] },
+        "surfaceId": "next_videos",
+        "identityViewId": "com.google.android.youtube:id/title",
+        "resetWindowClasses": ["com.google.android.apps.youtube.app.watchwhile.MainActivity"],
+        "pauseMedia": true,
+        "actions": [{ "type": "home" }]
+      },
       "surfaces": [
         {
           "id": "shorts",
           "match": { "anyViewIds": ["com.google.android.youtube:id/reel_recycler"] },
-          "actions": [{ "type": "back" }]
+          "actions": [{ "type": "home" }]
         },
         {
           "id": "home_feed",

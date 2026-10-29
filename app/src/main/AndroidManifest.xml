@@ -65,6 +65,18 @@
             </intent-filter>
         </activity>
 
+        <!--
+            Shown over a blocked feed. Its own task (taskAffinity) and hidden from Recents, so closing it
+            reveals the app underneath, never Inbox Only's settings; singleTask reuses one instance.
+        -->
+        <activity
+            android:name=".ui.BlockScreenActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.prestoza.inboxonly.blockscreen"
+            android:theme="@style/Theme.InboxOnly.BlockScreen" />
+
         <!-- The Quick Settings tile. Only the system (holding BIND_QUICK_SETTINGS_TILE) can bind it. -->
         <service
             android:name=".service.FocusTileService"

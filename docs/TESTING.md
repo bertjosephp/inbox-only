@@ -28,31 +28,44 @@ friend (or second account) who can send you a DM and a Reel.
 - [ ] After blocking some screens, the subtitle shows `N blocked`. Tomorrow it starts from 0.
 
 ## 3. Blocking (Focus on, default settings)
-For each screen: open it from the app's normal navigation and check the result.
+For each screen: open it from the app's normal navigation and check the result. "Blocked" means the
+block page fades in, names the app and screen, and its buttons work.
+
+**Block page**
+- [ ] It fades in smoothly and matches the app's colors (light and dark mode).
+- [ ] Swiping back on it closes the blocked app (you don't land in the feed).
+- [ ] It doesn't appear in Recents, and closing it never shows Inbox Only's settings.
 
 **Instagram**
-- [ ] Home feed (opening the app) → redirected to the DM inbox (or backed out).
-- [ ] Reels tab → blocked.
+- [ ] Home feed, also after force-closing Instagram → blocked; **Open DMs** opens the DM inbox.
+- [ ] Reels tab → blocked. Every Instagram block offers **Open DMs** and **Close Instagram**, never
+      "Go back".
 - [ ] Explore → blocked. Searching for a user still works.
 - [ ] DM inbox and a DM thread → allowed; you can read and send messages.
 - [ ] Notifications (heart) → allowed.
+- [ ] A Reel from a DM plays; swiping to the next → blocked; **Open DMs** opens the DM inbox.
 
 **Facebook**
-- [ ] News feed (opening the app) → Messenger opens.
-- [ ] Reels tab → blocked. A Reel opened from the feed → blocked.
+- [ ] News feed (opening the app) → blocked; **Open Messenger** opens Messenger.
+- [ ] Reels tab → blocked. A Reel opened from the feed → blocked. Every Facebook block offers
+      **Open Messenger** and **Close Facebook**, never "Go back".
 - [ ] The ☰ menu → allowed.
 - [ ] Notifications → allowed.
+- [ ] A Reel from a Messenger chat plays; swiping to the next → blocked; **Open Messenger** returns.
 
 **YouTube**
-- [ ] Home (opening the app) → app closes.
-- [ ] Shorts → blocked.
-- [ ] A video opened from a link or share → plays.
+- [ ] Home (opening the app) → blocked; **Close YouTube** closes it.
+- [ ] Shorts → blocked; **Close YouTube** closes it.
+- [ ] A video opened from a link or share → plays. Scrolling down through the list and back is fine.
+- [ ] Tapping a related video below it → blocked (**Close YouTube**). So is autoplay moving to the next video.
+- [ ] With YouTube in the background, a second link → plays.
+- [ ] Search → open a result → plays; a related video from it → blocked; back to Search → another result plays.
 - [ ] Search and Subscriptions → allowed when reachable (note: Home closes the app, so they're reached via links).
 
 **Reddit**
-- [ ] Opening from the launcher → app closes immediately.
+- [ ] Opening from the launcher → blocked; **Close Reddit** closes it.
 - [ ] A Reddit link from a Google search → the thread opens and is readable.
-- [ ] Back from that thread into a feed → app closes.
+- [ ] Back from that thread into a feed → blocked.
 - [ ] Popular, a subreddit, search results, the full-screen video feed → blocked.
 
 **General**
@@ -69,7 +82,7 @@ For each screen: open it from the app's normal navigation and check the result.
 
 ## 5. Reel from a chat
 - [ ] Setting "Allow one": a friend's Reel in a DM opens and plays.
-- [ ] Swiping to the next Reel → you're sent back to the chat.
+- [ ] Swiping to the next Reel → blocked; **Open DMs** / **Open Messenger** takes you to your messages.
 - [ ] Setting "Block": the Reel from the DM is blocked too.
 
 ## 6. Schedule, breaks and strict mode

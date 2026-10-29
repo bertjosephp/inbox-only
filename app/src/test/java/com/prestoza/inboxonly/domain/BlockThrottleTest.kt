@@ -43,16 +43,19 @@ class BlockThrottleTest {
     @Test
     fun `same surface again right after an action escalates to the next action`() {
         throttle.recordExecuted(pkg, "home_feed", redirect, t0)
-        assertEquals(BlockPlan.Execute(listOf(BlockAction.Back, BlockAction.Home)), throttle.plan(pkg, feed, ms(900)))
+        assertEquals(
+            BlockPlan.Execute(listOf(BlockAction.Back, BlockAction.Home), escalated = true),
+            throttle.plan(pkg, feed, ms(900)),
+        )
         throttle.recordExecuted(pkg, "home_feed", BlockAction.Back, ms(900))
-        assertEquals(BlockPlan.Execute(listOf(BlockAction.Home)), throttle.plan(pkg, feed, ms(1800)))
+        assertEquals(BlockPlan.Execute(listOf(BlockAction.Home), escalated = true), throttle.plan(pkg, feed, ms(1800)))
     }
 
     @Test
     fun `back that loops escalates to home`() {
         val reels = Decision.Block("reels", listOf(BlockAction.Back))
         throttle.recordExecuted(pkg, "reels", BlockAction.Back, t0)
-        assertEquals(BlockPlan.Execute(listOf(BlockAction.Home)), throttle.plan(pkg, reels, ms(800)))
+        assertEquals(BlockPlan.Execute(listOf(BlockAction.Home), escalated = true), throttle.plan(pkg, reels, ms(800)))
     }
 
     @Test
@@ -63,6 +66,29 @@ class BlockThrottleTest {
             BlockPlan.Execute(listOf(redirect, BlockAction.Back, BlockAction.Home)),
             throttle.plan(pkg, feed, ms(800)),
         )
+    }
+
+    @Test
+    fun `the block screen also gets the cooldown`() {
+        throttle.recordScreenShown(pkg, "home_feed", t0)
+        assertEquals(BlockPlan.Cooldown(Duration.ofMillis(400)), throttle.plan(pkg, feed, ms(300)))
+    }
+
+    @Test
+    fun `same surface right after the block screen runs the actions directly`() {
+        throttle.recordScreenShown(pkg, "home_feed", t0)
+        assertEquals(
+            BlockPlan.Execute(listOf(redirect, BlockAction.Back, BlockAction.Home), escalated = true),
+            throttle.plan(pkg, feed, ms(900)),
+        )
+    }
+
+    @Test
+    fun `back from the block screen that loops escalates to home`() {
+        val reels = Decision.Block("reels", listOf(BlockAction.Back))
+        throttle.recordScreenShown(pkg, "reels", t0)
+        throttle.recordExecuted(pkg, "reels", BlockAction.Back, ms(3000))
+        assertEquals(BlockPlan.Execute(listOf(BlockAction.Home), escalated = true), throttle.plan(pkg, reels, ms(3800)))
     }
 
     @Test

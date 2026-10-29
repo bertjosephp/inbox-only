@@ -7,12 +7,15 @@ package com.prestoza.inboxonly.service
 import android.accessibilityservice.AccessibilityService
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.net.toUri
 import com.prestoza.inboxonly.appContainer
 import com.prestoza.inboxonly.debug.InspectorLogger
+import com.prestoza.inboxonly.domain.AppSession
 import com.prestoza.inboxonly.domain.BlockAction
 import com.prestoza.inboxonly.domain.BlockDecider
 import com.prestoza.inboxonly.domain.BlockPlan
@@ -20,14 +23,15 @@ import com.prestoza.inboxonly.domain.BlockThrottle
 import com.prestoza.inboxonly.domain.Decision
 import com.prestoza.inboxonly.domain.FocusController
 import com.prestoza.inboxonly.domain.FocusState
-import com.prestoza.inboxonly.domain.ReelFromChatTracker
 import com.prestoza.inboxonly.domain.Settings
+import com.prestoza.inboxonly.ui.BlockScreenActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 /**
  * Blocks doomscroll surfaces in the four target apps while Focus is on.
@@ -46,7 +50,7 @@ class BlockerAccessibilityService : AccessibilityService() {
     // Content-changed events don't say which activity is showing; remember it from the last
     // window-state event per package.
     private val windowClassByPackage = mutableMapOf<String, String>()
-    private val reelTrackers = mutableMapOf<String, ReelFromChatTracker>()
+    private val sessions = mutableMapOf<String, AppSession>()
     private val throttle = BlockThrottle()
 
     private var pendingPackage: String? = null
@@ -56,6 +60,10 @@ class BlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         val container = appContainer
+        // The block screen's "Go back" can only work once the screen has gone, so wait for its exit.
+        container.blockScreenBridge.goBack = { packageName, surfaceId ->
+            handler.postDelayed({ goBackAfterBlockScreen(packageName, surfaceId) }, BACK_AFTER_SCREEN_MS)
+        }
         val newScope = MainScope()
         scope = newScope
         // Parse rules.json off the main thread so the first screen check doesn't pay for it.
@@ -81,7 +89,7 @@ class BlockerAccessibilityService : AccessibilityService() {
                         packageName,
                         windowClass,
                         appContainer.rulesRepository.rules,
-                        reelTrackers.getOrPut(packageName) { ReelFromChatTracker() },
+                        session(packageName),
                     )
                 }
                 handler.removeCallbacks(pendingCheck)
@@ -107,7 +115,8 @@ class BlockerAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
-        handler.removeCallbacks(pendingCheck)
+        appContainer.blockScreenBridge.goBack = null
+        handler.removeCallbacksAndMessages(null)
         scope?.cancel()
         scope = null
         super.onDestroy()
@@ -126,14 +135,16 @@ class BlockerAccessibilityService : AccessibilityService() {
             val app = rules.forPackage(packageName)
             if (rules.placeholder || app == null) return
             val signature = ScreenSignatureReader.read(root, packageName, windowClass, app)
-            val tracker = reelTrackers.getOrPut(packageName) { ReelFromChatTracker() }
-            val decision = BlockDecider.decide(signature, rules, settings, tracker)
+            val now = appContainer.timeSource.now()
+            val decision = BlockDecider.decide(signature, rules, settings, session(packageName), now)
             InspectorLogger.logDecision(signature, decision)
-            if (decision is Decision.Block) block(packageName, decision)
+            if (decision is Decision.Block) block(packageName, app.appId, decision)
         } finally {
             root.recycleCompat()
         }
     }
+
+    private fun session(packageName: String): AppSession = sessions.getOrPut(packageName) { AppSession() }
 
     // The stored state can be stale if an alarm is late, so resolve it against the clock every time.
     private fun isFocusBlocking(): Boolean {
@@ -143,6 +154,7 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     private fun block(
         packageName: String,
+        appId: String,
         decision: Decision.Block,
     ) {
         val now = appContainer.timeSource.now()
@@ -156,11 +168,54 @@ class BlockerAccessibilityService : AccessibilityService() {
             }
 
             is BlockPlan.Execute -> {
-                val performed = plan.actions.firstOrNull(::perform) ?: return
-                throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
-                // One count per block event, not per accessibility event.
-                appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
+                if (decision.pauseMedia) {
+                    // Pause first and give the app a moment, or YouTube shrinks the still-playing video
+                    // into a floating player on top of the block screen. Recording now holds the cooldown.
+                    pauseMedia()
+                    throttle.recordScreenShown(packageName, decision.surfaceId, now)
+                    handler.postDelayed({ execute(packageName, appId, decision, plan, now) }, PAUSE_BEFORE_SCREEN_MS)
+                } else {
+                    execute(packageName, appId, decision, plan, now)
+                }
             }
+        }
+    }
+
+    private fun execute(
+        packageName: String,
+        appId: String,
+        decision: Decision.Block,
+        plan: BlockPlan.Execute,
+        now: Instant,
+    ) {
+        // A fresh block shows the block screen; its buttons offer the way out. If the surface is back right
+        // after that (or after an action), act directly so the user can't get stuck.
+        val intent = BlockScreenActivity.intent(this, packageName, appId, decision)
+        // No window animation: the page draws its own fade + zoom (see BlockScreenActivity).
+        if (!plan.escalated && startSafely(intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))) {
+            throttle.recordScreenShown(packageName, decision.surfaceId, now)
+        } else {
+            val performed = plan.actions.firstOrNull(::perform) ?: return
+            throttle.recordExecuted(packageName, decision.surfaceId, performed, now)
+        }
+        // One count per block event, not per accessibility event.
+        appContainer.applicationScope.launch { appContainer.focusCoordinator.recordBlock() }
+    }
+
+    // The system media-pause signal, as a headphone button sends it. It goes to whichever app is playing
+    // (here YouTube); nothing in YouTube's screens is touched.
+    private fun pauseMedia() {
+        val audio = getSystemService(AudioManager::class.java) ?: return
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
+    }
+
+    private fun goBackAfterBlockScreen(
+        packageName: String,
+        surfaceId: String,
+    ) {
+        if (performGlobalAction(GLOBAL_ACTION_BACK)) {
+            throttle.recordExecuted(packageName, surfaceId, BlockAction.Back, appContainer.timeSource.now())
         }
     }
 
@@ -219,6 +274,12 @@ class BlockerAccessibilityService : AccessibilityService() {
     private companion object {
         const val CONTENT_THROTTLE_MS = 250L
         const val COOLDOWN_RECHECK_SLACK_MS = 50L
+
+        // Long enough for the playing app to handle the pause before the block screen covers it.
+        const val PAUSE_BEFORE_SCREEN_MS = 150L
+
+        // The page has faded out before it asks; this just lets its window go so Back reaches the app.
+        const val BACK_AFTER_SCREEN_MS = 150L
         const val LISTENED_EVENT_TYPES =
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     }

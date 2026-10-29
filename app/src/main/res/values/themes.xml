@@ -8,4 +8,14 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <!--
+        The block screen starts as a transparent window with no window animation: One UI swaps window
+        animations for its own slide, so the page draws its fade + zoom itself, over the blocked app.
+    -->
+    <style name="Theme.InboxOnly.BlockScreen">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

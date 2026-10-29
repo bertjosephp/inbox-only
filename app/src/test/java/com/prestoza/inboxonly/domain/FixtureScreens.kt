@@ -90,7 +90,7 @@ object FixtureScreens {
     fun igReelViewer(
         identity: Int?,
         windowClass: String = "com.instagram.modal.TransparentModalActivity",
-    ) = ScreenSignature(IG, windowClass, viewIds = igOffscreenReels, reelIdentity = identity)
+    ) = ScreenSignature(IG, windowClass, viewIds = igOffscreenReels, itemIdentity = identity)
 
     private fun fb(
         descriptions: Set<String>,
@@ -128,7 +128,7 @@ object FixtureScreens {
      * window. The "View ‹creator›'s reels" label (not in the signature: it's only hashed) gives [identity].
      */
     fun fbReelFromMessenger(identity: Int?) =
-        ScreenSignature(FB, FB_IMMERSIVE, contentDescriptions = setOf("Reel details"), reelIdentity = identity)
+        ScreenSignature(FB, FB_IMMERSIVE, contentDescriptions = setOf("Reel details"), itemIdentity = identity)
 
     /** c3 #4: Back from that viewer lands on Facebook's feed while the window class is still the viewer's. */
     val fbFeedAfterMessengerReel = fbFeed.copy(windowClass = FB_IMMERSIVE)
@@ -170,6 +170,26 @@ object FixtureScreens {
             "android.view.ViewGroup",
             contentDescriptions = setOf("Home", "Subscriptions"),
             selectedContentDescriptions = setOf("Subscriptions"),
+        )
+
+    const val YT_MAIN_ACTIVITY = "com.google.android.apps.youtube.app.watchwhile.MainActivity"
+
+    /**
+     * c5 #1–#20 and #44–#55: a watch page while the video plays or the list is scrolled. No `title` view:
+     * YouTube only shows it while a video loads, and not at all for one opened from a link.
+     */
+    fun ytWatchPage() = ScreenSignature(YT, "android.widget.FrameLayout", viewIds = setOf(yt("watch_panel")))
+
+    /**
+     * c5 #21, #42–#43, #56 (and c1 #48): a watch page while a video loads, with its collapsed `title`.
+     * [identity] stands in for the hash of that title (never logged, so not in the capture).
+     */
+    fun ytWatchLoading(identity: Int) =
+        ScreenSignature(
+            YT,
+            "android.view.ViewGroup",
+            viewIds = setOf(yt("watch_panel"), yt("title")),
+            itemIdentity = identity,
         )
 
     /** c1 #106: a video's watch page. */

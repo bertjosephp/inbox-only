@@ -31,6 +31,7 @@ data class Rules(
  * @property allowed screens that are always allowed (DMs, threads). Checked first; they win over everything.
  * @property surfaces blockable screens, checked in order; the first match decides.
  * @property reelViewer optional "Reel opened from a chat" handling (see [ReelFromChatTracker]).
+ * @property followOn optional "one item per visit" handling for an allowed page (see [FollowOnTracker]).
  */
 @Serializable
 data class AppRules(
@@ -39,21 +40,25 @@ data class AppRules(
     val allowed: List<ScreenRule> = emptyList(),
     val surfaces: List<SurfaceRule> = emptyList(),
     val reelViewer: ReelViewerRule? = null,
+    val followOn: FollowOnRule? = null,
 ) {
     /** Every view ID any rule for this app mentions: the only IDs the service ever looks up. */
     val referencedViewIds: Set<String> by lazy {
-        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match))
+        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match, followOn?.match))
             .flatMap { it.referencedViewIds }
-            .plus(listOfNotNull(reelViewer?.identityViewId))
+            .plus(listOfNotNull(reelViewer?.identityViewId, followOn?.identityViewId))
             .toSet()
     }
 
+    /** The view whose label identifies the current Reel or video, if the rules name one. */
+    val itemIdentityViewId: String? get() = reelViewer?.identityViewId ?: followOn?.identityViewId
+
     /** Compiled [ReelViewerRule.identityDescriptionPattern], if any. */
-    val reelIdentityDescriptionRegex: Regex? by lazy { reelViewer?.identityDescriptionPattern?.let(::Regex) }
+    val itemIdentityDescriptionRegex: Regex? by lazy { reelViewer?.identityDescriptionPattern?.let(::Regex) }
 
     /** Every content description any rule for this app mentions. */
     val referencedContentDescriptions: Set<String> by lazy {
-        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match))
+        (allowed.map { it.match } + surfaces.map { it.match } + listOfNotNull(reelViewer?.match, followOn?.match))
             .flatMap { it.contentDescriptions + it.selectedContentDescriptions }
             .toSet()
     }
@@ -101,6 +106,32 @@ data class ReelViewerRule(
 )
 
 /**
+ * An allowed page where the first item is fine but moving on to another isn't: YouTube's watch page,
+ * where a linked video may play but its "up next" videos may not.
+ *
+ * A visit starts on the first screen matching [match] (after any other screen, or a window in
+ * [resetWindowClasses] opening). The first item's identity is remembered; a different one while the
+ * visit lasts is blocked as [surfaceId].
+ *
+ * @property identityViewId a view whose label differs per item and only appears while an item loads.
+ *   Hashed in memory only; never logged or stored.
+ * @property resetWindowClasses windows whose opening starts a new visit (e.g. a link opening the app).
+ * @property pauseMedia send the system media-pause signal (like a headphone button) before the block
+ *   screen. YouTube otherwise shrinks a playing video into a floating picture-in-picture player that
+ *   stays on top of the block screen. Only for rules where something is certainly playing, so it can't
+ *   pause another app's music.
+ */
+@Serializable
+data class FollowOnRule(
+    val match: Match,
+    val surfaceId: String,
+    val identityViewId: String,
+    val resetWindowClasses: List<String> = emptyList(),
+    val pauseMedia: Boolean = false,
+    val actions: List<BlockAction> = listOf(BlockAction.Home),
+)
+
+/**
  * Conditions on a [ScreenSignature]. All non-empty conditions must hold. A match with no conditions at
  * all matches nothing, so a half-written rule can never block everything.
  */
@@ -145,12 +176,16 @@ data class Match(
 /** What to do when a blocked screen appears. Serialized with a `"type"` field. */
 @Serializable
 sealed interface BlockAction {
-    /** Open a deep link, e.g. Instagram's DM inbox. Must be verified on a real device before use. */
+    /**
+     * Open a deep link, e.g. Instagram's DM inbox. Must be verified on a real device before use.
+     * [label] is the block screen's button text, e.g. "Open DMs".
+     */
     @Serializable
     @SerialName("redirect")
     data class Redirect(
         val uri: String,
         @SerialName("package") val packageName: String? = null,
+        val label: String? = null,
     ) : BlockAction
 
     /** Launch another app's main screen, e.g. Messenger instead of the Facebook feed. */
@@ -158,6 +193,7 @@ sealed interface BlockAction {
     @SerialName("launch")
     data class Launch(
         @SerialName("package") val packageName: String,
+        val label: String? = null,
     ) : BlockAction
 
     /** Press Back. */
