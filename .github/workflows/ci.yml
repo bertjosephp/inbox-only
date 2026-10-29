@@ -33,7 +33,7 @@ jobs:
         run: ./gradlew testDebugUnitTest
 
       - name: Android Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintDebug lintRelease
 
       - name: Build debug and release APKs
         run: ./gradlew assembleDebug assembleRelease

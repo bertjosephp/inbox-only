@@ -59,3 +59,28 @@ which the system calls whenever the shade shows the tile, and it re-renders if t
 while the shade stays open.
 **Why:** An "active" tile only gets `onStartListening` when the app requests it, so a countdown subtitle
 would go stale. A regular tile costs nothing while the shade is closed and needs no ticking timer.
+
+## ADR-010: "Set up" tile instead of STATE_UNAVAILABLE
+**Decision:** While the accessibility service is disabled, the tile is `STATE_INACTIVE` with the subtitle
+`Set up`, and tapping it opens the app.
+**Why:** The spec asked for `STATE_UNAVAILABLE` plus "tap opens onboarding", but Android doesn't deliver
+taps to an unavailable tile, so that combination can't work.
+
+## ADR-011: Turning the service off keeps its package filter
+**Decision:** When Focus is off, `setServiceInfo()` sets `eventTypes = 0` and leaves `packageNames` as
+declared in XML.
+**Why:** In `AccessibilityServiceInfo`, `packageNames = null` means *every app*. "Clearing" packages
+would make the service hear everything the moment event types came back. A unit test checks the XML
+filter lists exactly the four packages in `rules.json`.
+
+## ADR-012: The debug inspector listens even when Focus is off
+**Decision:** In debug builds only (`InspectorLogger.ENABLED`), the service stays subscribed while
+Focus is off, so screens can be captured without blocking getting in the way. Blocking itself still
+requires Focus. Release builds have `ENABLED = false` and stay fully inert.
+**Why:** Capturing a blocked screen with Focus on would immediately bounce out of it.
+
+## ADR-013: Throttle content-changed events, don't debounce
+**Decision:** At most one screen check per 250 ms window after a content-changed event; window-state
+changes are checked immediately.
+**Why:** A playing video or Reel fires content changes continuously. A trailing debounce would never
+settle and never fire, which would make Reels unblockable.

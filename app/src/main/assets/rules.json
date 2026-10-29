@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "placeholder": true,
+  "comment": "PLACEHOLDER RULES. No real selectors yet: every app has empty allowed/surfaces lists, so nothing is ever blocked. Real view IDs are added only from on-device captures (scripts/inspect.sh); see docs/UPDATING_RULES.md.",
+  "apps": [
+    {
+      "appId": "instagram",
+      "package": "com.instagram.android",
+      "allowed": [],
+      "surfaces": []
+    },
+    {
+      "appId": "facebook",
+      "package": "com.facebook.katana",
+      "allowed": [],
+      "surfaces": []
+    },
+    {
+      "appId": "youtube",
+      "package": "com.google.android.youtube",
+      "allowed": [],
+      "surfaces": []
+    },
+    {
+      "appId": "reddit",
+      "package": "com.reddit.frontpage",
+      "allowed": [],
+      "surfaces": []
+    }
+  ]
+}
