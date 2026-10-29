@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schedule, breaks and strict mode (M6): alarms re-registered on boot, clock change, time zone change,
   app update and exact-alarm permission change, and on every process start. Tapping the tile inside a
   window starts a break (or, in strict mode, shows "Strict mode: Focus until 6:00 PM").
+- Settings screen and onboarding (M7): one Compose screen (block list, schedule, tile duration, break
+  length, Reels from chats, strict mode, permission footer with Fix buttons), Material 3 with dynamic
+  color. Three-step onboarding: accessibility with Android 13+ restricted-settings help, battery
+  optimization with Samsung "Never sleeping apps" guidance, and adding the tile.
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
