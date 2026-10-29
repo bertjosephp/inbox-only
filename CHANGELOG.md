@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-29
+
 ### Added
 - YouTube: one video per visit. A video opened from a link, Search or Subscriptions plays; moving on to
   another from the list below it (or autoplay) is blocked. New "Next videos" toggle. Shorts now only
@@ -62,3 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project scaffold: Gradle Kotlin DSL with version catalog, empty Compose activity,
   Spotless + ktlint, Android Lint, GitHub Actions CI, and a CI check that fails if the APK
   requests the INTERNET permission. (M0)
+
+[Unreleased]: https://github.com/bertjosephp/inbox-only/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/bertjosephp/inbox-only/releases/tag/v1.0.0
